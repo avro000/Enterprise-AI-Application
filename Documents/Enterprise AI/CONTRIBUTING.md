@@ -103,7 +103,7 @@ These are the integration points between frontend and backend. If either develop
 1. Push code to GitHub: `git push origin frontend`
 2. Go to [freebuff.com](https://freebuff.com)
 3. Sign in with GitHub account
-4. Connect the `avro000/minorProject` repository
+4. Connect the `avro000/Enterprise-AI-Application` repository
 5. Select the `frontend` branch
 6. Freebuff Cloud IDE opens with live preview
 7. Make changes via AI prompts → changes save to the repo

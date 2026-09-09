@@ -48,7 +48,7 @@ Freebuff.com is an AI-powered prompt-to-app builder. Your workflow should be:
 
 ### Design Approach
 - Start with Freebuff Web for rapid visual prototyping
-- Once satisfied with the design, connect the GitHub repo (`avro000/minorProject`) to Freebuff Cloud
+- Once satisfied with the design, connect the GitHub repo (`avro000/Enterprise-AI-Application`) to Freebuff Cloud
 - Push all code to the `frontend` branch on GitHub
 - The backend developer will handle API integration and testing
 
