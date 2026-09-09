@@ -1,0 +1,55 @@
+# Dependencies
+node_modules/
+__pycache__/
+*.pyc
+.pytest_cache/
+*.egg-info/
+dist/
+build/
+.eggs/
+
+# Environment
+.env
+.env.local
+.env.production
+*.env
+
+# IDE / Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# FAISS vector store (generated)
+backend/data/vector_store/
+
+# Uploaded documents (user data)
+backend/data/uploads/
+
+# Logs
+*.log
+logs/
+
+# Docker
+docker-compose.override.yml
+
+# OS
+Desktop.ini
+ehthumbs.db
+
+# Python virtual env
+venv/
+.venv/
+env/
+
+# Coverage
+htmlcov/
+.coverage
+coverage.xml
+
+# Frontend build output
+frontend/dist/
+frontend/.env.local
