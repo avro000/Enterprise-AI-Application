@@ -1,0 +1,77 @@
+[
+  {
+    "question": "What is the SLA for premium customers?",
+    "expected_contains": "48 hours",
+    "intent": "knowledge_only"
+  },
+  {
+    "question": "Show me order ORD-48321",
+    "expected_contains": "Apex Manufacturing",
+    "intent": "data_only"
+  },
+  {
+    "question": "Is order ORD-48321 at risk of SLA breach?",
+    "expected_contains": ["premium", "48 hours"],
+    "intent": "hybrid"
+  },
+  {
+    "question": "What is the escalation procedure for critical delayed orders?",
+    "expected_contains": "Operations Director",
+    "intent": "knowledge_only"
+  },
+  {
+    "question": "Show me inventory level for SKU-2847",
+    "expected_contains": "0",
+    "intent": "data_only"
+  },
+  {
+    "question": "Why is order ORD-48321 delayed?",
+    "expected_contains": "supplier",
+    "intent": "exception_investigation"
+  },
+  {
+    "question": "Can we offer an alternative product for delayed premium orders?",
+    "expected_contains": "alternative product policy",
+    "intent": "knowledge_only"
+  },
+  {
+    "question": "What is the return window under our return policy?",
+    "expected_contains": "30 days",
+    "intent": "knowledge_only"
+  },
+  {
+    "question": "Show status of supplier SupplyCo International",
+    "expected_contains": "delayed",
+    "intent": "data_only"
+  },
+  {
+    "question": "How many vacation days do employees get per year?",
+    "expected_contains": "20 days",
+    "intent": "knowledge_only"
+  },
+  {
+    "question": "Who approved exception EX-20381?",
+    "expected_contains": "approved_by",
+    "intent": "data_only"
+  },
+  {
+    "question": "Is customer GlobalTech Corp standard or enterprise tier?",
+    "expected_contains": "enterprise",
+    "intent": "data_only"
+  },
+  {
+    "question": "What is the penalty for breaching enterprise SLA?",
+    "expected_contains": "penalty",
+    "intent": "knowledge_only"
+  },
+  {
+    "question": "What is the CEO's favorite color?",
+    "expected_contains": "don't have enough information",
+    "intent": "knowledge_only"
+  },
+  {
+    "question": "What are the stock prices of Acme Industrial Distribution?",
+    "expected_contains": "don't have enough information",
+    "intent": "knowledge_only"
+  }
+]
