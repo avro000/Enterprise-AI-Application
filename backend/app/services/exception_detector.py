@@ -11,7 +11,8 @@ from sqlalchemy.orm import selectinload
 from app.models.audit_log import AuditLog
 from app.models.customer import Customer
 from app.models.exception_case import ExceptionCase
-from app.models.order import Order
+from app.models.inventory import Inventory
+from app.models.order import Order, OrderItem
 
 logger = logging.getLogger("exception_detector")
 
@@ -64,7 +65,10 @@ class ExceptionDetectorService:
         # Exclude delivered and cancelled orders
         stmt = (
             select(Order)
-            .options(selectinload(Order.customer))
+            .options(
+                selectinload(Order.customer),
+                selectinload(Order.items).selectinload(OrderItem.inventory_item).selectinload(Inventory.supplier),
+            )
             .where(
                 not_(Order.status.in_(["delivered", "cancelled"])),
                 Order.expected_delivery_date <= horizon,
@@ -95,7 +99,25 @@ class ExceptionDetectorService:
             hours_remaining = (exp_date - now).total_seconds() / 3600.0
             customer_tier = order.customer.tier if order.customer else "standard"
             severity = cls.calculate_severity(hours_remaining, customer_tier)
-            exception_type = "delayed_order" if hours_remaining < 0 else "sla_risk"
+
+            # Classify diverse operational exception types based on operational factors
+            inv_items = order.items if order.items else []
+            has_zero_stock = any(it.inventory_item and it.inventory_item.quantity_available <= 0 for it in inv_items)
+            has_delayed_supplier = any(
+                it.inventory_item and it.inventory_item.supplier and it.inventory_item.supplier.status == "delayed"
+                for it in inv_items
+            )
+
+            if order.status == "delayed" or hours_remaining < 0:
+                exception_type = "delayed_order"
+            elif has_delayed_supplier:
+                exception_type = "supplier_late"
+            elif has_zero_stock:
+                exception_type = "inventory_low"
+            elif customer_tier in ("premium", "enterprise") and hours_remaining < 24:
+                exception_type = "sla_risk"
+            else:
+                exception_type = "delayed_order"
 
             case_number = await cls._generate_unique_case_number(db)
 
