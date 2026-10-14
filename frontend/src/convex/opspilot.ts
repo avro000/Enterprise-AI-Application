@@ -135,7 +135,7 @@ const TYPES: TypeSpec[] = [
         description: (c) =>
           `Create an internal operations task: re-source ${c.orderId} from alternate stock and confirm the new ship date.`,
         risk: "low",
-        auto: true,
+        auto: false,
       },
       {
         description: (c) =>
@@ -165,7 +165,7 @@ const TYPES: TypeSpec[] = [
         description: () =>
           "Reassign the 3 near-SLA tickets to the on-call engineer and add an internal note with the escalation context.",
         risk: "low",
-        auto: true,
+        auto: false,
       },
       {
         description: (c) =>
@@ -195,7 +195,7 @@ const TYPES: TypeSpec[] = [
         description: () =>
           "Add an internal reconciliation note to invoice INV-77431 and open a defect ticket for the CRM→ERP sync failure.",
         risk: "low",
-        auto: true,
+        auto: false,
       },
       {
         description: () =>
@@ -225,7 +225,7 @@ const TYPES: TypeSpec[] = [
         description: () =>
           "Update the AP contact on the account record and create a 7-day payment follow-up task for collections.",
         risk: "low",
-        auto: true,
+        auto: false,
       },
       {
         description: (c) =>
@@ -255,7 +255,7 @@ const TYPES: TypeSpec[] = [
         description: () =>
           "Add a supplier performance note and flag PO-30118 for the weekly procurement review.",
         risk: "low",
-        auto: true,
+        auto: false,
       },
       {
         description: () =>
@@ -285,7 +285,7 @@ const TYPES: TypeSpec[] = [
         description: () =>
           "Reassign TK-90112 to the regional field queue, raise priority, and cross-close the duplicate ticket.",
         risk: "low",
-        auto: true,
+        auto: false,
       },
       {
         description: (c) =>
@@ -315,7 +315,7 @@ const TYPES: TypeSpec[] = [
         description: () =>
           "Reserve remaining units against the two open orders and raise the replenishment trigger to the forecast-adjusted level.",
         risk: "low",
-        auto: true,
+        auto: false,
       },
       {
         description: () =>
@@ -345,7 +345,7 @@ const TYPES: TypeSpec[] = [
         description: () =>
           "Update the pack-list template to print lot-traceability certificates and file a corrective action record.",
         risk: "low",
-        auto: true,
+        auto: false,
       },
       {
         description: (c) =>
@@ -375,7 +375,7 @@ const TYPES: TypeSpec[] = [
         description: () =>
           "Assign a named service manager, verify the part on the truck, and lock the guaranteed fourth visit slot.",
         risk: "low",
-        auto: true,
+        auto: false,
       },
       {
         description: (c) =>
@@ -850,12 +850,10 @@ export const finalizeInvestigation = internalMutation({
           exceptionId: id,
           description: action.description(c),
           riskTier: action.risk,
-          autoExecute: action.auto,
-          status: action.auto ? "executed" : "pending",
-          decidedBy: action.auto ? "OpsPilot AI" : undefined,
-          decidedAt: action.auto ? now : undefined,
+          autoExecute: false,
+          status: "pending",
         });
-        if (!action.auto) pending += 1;
+        pending += 1;
       }
     } else {
       pending = existing.filter((a) => a.status === "pending").length;
@@ -870,10 +868,7 @@ export const finalizeInvestigation = internalMutation({
     });
     await ctx.db.insert("auditEvents", {
       exceptionId: id,
-      event:
-        pending > 0
-          ? `Recommendation generated — ${pending} action${pending > 1 ? "s" : ""} staged for approval`
-          : "Recommendation generated — low-risk actions auto-executed",
+      event: `Recommendation generated — ${pending} action${pending > 1 ? "s" : ""} staged for approval`,
       actor: "OpsPilot AI",
       at: now + 1,
       kind: "recommend",
@@ -885,6 +880,12 @@ export const approveAction = mutation({
   args: { exceptionId: v.id("exceptions"), actionId: v.id("exceptionActions") },
   handler: async (ctx, { exceptionId, actionId }) => {
     const { role, actor } = await requireOpsAccess(ctx);
+    const exception = await ctx.db.get(exceptionId);
+    if (!exception) throw new Error("Resource not found.");
+    if (exception.status === "resolved" || exception.status === "rejected") {
+      throw new Error("Cannot modify decisions on an already resolved or rejected case.");
+    }
+
     const action = await ctx.db.get(actionId);
     if (!action || action.exceptionId !== exceptionId) throw new Error("Resource not found.");
     if (action.status !== "pending") throw new Error("Action has already been decided.");
@@ -921,6 +922,12 @@ export const rejectAction = mutation({
   },
   handler: async (ctx, { exceptionId, actionId, reason }) => {
     const { role, actor } = await requireOpsAccess(ctx);
+    const exception = await ctx.db.get(exceptionId);
+    if (!exception) throw new Error("Resource not found.");
+    if (exception.status === "resolved" || exception.status === "rejected") {
+      throw new Error("Cannot modify decisions on an already resolved or rejected case.");
+    }
+
     const action = await ctx.db.get(actionId);
     if (!action || action.exceptionId !== exceptionId) throw new Error("Resource not found.");
     if (action.status !== "pending") throw new Error("Action has already been decided.");
@@ -966,6 +973,14 @@ async function syncExceptionStatus(
     .withIndex("by_exception", (q) => q.eq("exceptionId", exceptionId))
     .collect();
 
+  const hasPending = actions.some((a) => a.status === "pending");
+  if (hasPending) {
+    if (exception.status !== "recommendation_ready") {
+      await ctx.db.patch(exceptionId, { status: "recommendation_ready" });
+    }
+    return;
+  }
+
   const anyApproved = actions.some((a) => a.status === "approved" || a.status === "executed");
   const allRejected = actions.length > 0 && actions.every((a) => a.status === "rejected");
 
@@ -982,6 +997,21 @@ export const resolveException = mutation({
     const { actor } = await requireOpsAccess(ctx);
     const exception = await ctx.db.get(id);
     if (!exception) throw new Error("Resource not found.");
+    if (exception.status === "resolved") return { ok: true };
+
+    const actions = await ctx.db
+      .query("exceptionActions")
+      .withIndex("by_exception", (q) => q.eq("exceptionId", id))
+      .collect();
+
+    const pending = actions.filter((a) => a.status === "pending");
+    if (pending.length > 0) {
+      throw new Error("Cannot resolve case while actions are pending decision. Approve or reject all actions first.");
+    }
+    const hasApproved = actions.some((a) => a.status === "approved" || a.status === "executed");
+    if (!hasApproved) {
+      throw new Error("Cannot resolve case without an approved resolution action.");
+    }
 
     const now = Date.now();
     const resolutionMinutes = Math.max(1, Math.round((now - exception.detectedAt) / 60_000));

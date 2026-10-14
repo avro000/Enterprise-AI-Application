@@ -264,7 +264,7 @@ export async function executeQuery(queryName: string, args?: any): Promise<any> 
             };
             actorDesig = roleMap[actorRole.toLowerCase()] || "Operations Manager";
           }
-          const decidedByLabel = a.approver_display || (actorName ? `${actorName} (${actorDesig})` : a.auto_execute ? "OpsPilot AI" : undefined);
+          const decidedByLabel = a.approver_display || (actorName ? `${actorName} (${actorDesig})` : undefined);
 
           return {
             ...a,

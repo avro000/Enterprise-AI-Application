@@ -166,10 +166,13 @@ export const ROLE_VAR: Record<OpsRole, string> = {
 export function stripMarkdownAsterisks(text: string | undefined | null): string {
   if (!text) return "";
   return text
+    .replace(/\*\*\*([^*]+)\*\*\*/g, "$1")
     .replace(/\*\*([^*]+)\*\*/g, "$1")
+    .replace(/\*([^*]+)\*/g, "$1")
     .replace(/__([^_]+)__/g, "$1")
-    .replace(/\*{2,}/g, "")
-    .replace(/(^|\n)\s*[\*\-]\s+/g, "$1• ")
-    .replace(/^\*+|\*+$/g, "")
+    .replace(/_([^_]+)_/g, "$1")
+    .replace(/\*{1,}/g, "")
+    .replace(/(^|\n)\s*[\-]\s+/g, "$1• ")
+    .replace(/(^|\n)\s*[•]\s+/g, "$1• ")
     .trim();
 }
