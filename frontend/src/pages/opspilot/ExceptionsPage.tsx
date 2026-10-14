@@ -1,4 +1,4 @@
-import { SeverityBadge, StatusBadge } from "@/components/opspilot/badges";
+import { SeverityBadge, StatusBadge, TierBadge } from "@/components/opspilot/badges";
 import { EmptyState, LoadingSpinner, Pagination } from "@/components/opspilot/common";
 import {
   Select,
@@ -205,10 +205,10 @@ export default function ExceptionsPage() {
                       <StatusBadge status={e.status} />
                     </td>
                     <td className="hidden px-4 py-3 md:table-cell">
-                      {e.customer}
-                      <span className="ml-2 text-[10px] text-muted-foreground capitalize">
-                        {e.customerTier}
-                      </span>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="font-medium text-foreground">{e.customer}</span>
+                        {e.customerTier && <TierBadge tier={e.customerTier} />}
+                      </div>
                     </td>
                     <td className="px-4 py-3 text-xs text-muted-foreground">
                       {relativeTime(e.detectedAt)}
