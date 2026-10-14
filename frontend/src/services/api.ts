@@ -226,8 +226,11 @@ export interface ExceptionDetail {
   related_order_id?: string;
   related_customer_id?: string;
   customer?: string;
+  customer_name?: string;
   customerTier?: "standard" | "premium" | "enterprise";
+  customer_tier?: string;
   orderId?: string;
+  order_number?: string;
   assigned_to?: string;
   assignedTo?: string;
   assignee_name?: string;

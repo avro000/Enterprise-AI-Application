@@ -50,6 +50,8 @@ async def list_exceptions(
             selectinload(ExceptionCase.actions).selectinload(ExceptionAction.approver),
             selectinload(ExceptionCase.resolver),
             selectinload(ExceptionCase.assignee),
+            selectinload(ExceptionCase.customer),
+            selectinload(ExceptionCase.order),
         )
     )
     count_stmt = select(func.count(ExceptionCase.id))
@@ -152,6 +154,8 @@ async def get_exception(
             selectinload(ExceptionCase.actions).selectinload(ExceptionAction.approver),
             selectinload(ExceptionCase.resolver),
             selectinload(ExceptionCase.assignee),
+            selectinload(ExceptionCase.customer),
+            selectinload(ExceptionCase.order),
         )
         .where(ExceptionCase.id == exception_id)
     )

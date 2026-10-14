@@ -68,6 +68,9 @@ class ExceptionCaseResponse(BaseModel):
     status: str
     related_order_id: Optional[UUID] = None
     related_customer_id: Optional[UUID] = None
+    customer_name: Optional[str] = None
+    customer_tier: Optional[str] = None
+    order_number: Optional[str] = None
     assigned_to: Optional[UUID] = None
     investigation_summary: Optional[str] = None
     root_cause: Optional[str] = None

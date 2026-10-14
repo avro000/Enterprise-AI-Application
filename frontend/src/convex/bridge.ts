@@ -62,7 +62,9 @@ export async function executeQuery(queryName: string, args?: any): Promise<any> 
         exception_type: e.exception_type,
         severity: e.severity,
         status: e.status,
-        customer: e.customer || "Apex Manufacturing",
+        customer: e.customer_name || e.customer || "Apex Manufacturing",
+        customerTier: e.customer_tier || e.customerTier || "premium",
+        orderId: e.order_number || e.orderId || (e.related_order_id ? "ORD-" + e.case_number.replace(/\D/g, "") : "ORD-48321"),
         detectedAt: e.detected_at,
         detected_at: e.detected_at,
       }));
@@ -89,7 +91,9 @@ export async function executeQuery(queryName: string, args?: any): Promise<any> 
           exception_type: e.exception_type,
           severity: e.severity,
           status: e.status,
-          customer: e.customer || "Apex Manufacturing",
+          customer: e.customer_name || e.customer || "Apex Manufacturing",
+          customerTier: e.customer_tier || e.customerTier || "premium",
+          orderId: e.order_number || e.orderId || (e.related_order_id ? "ORD-" + e.case_number.replace(/\D/g, "") : "ORD-48321"),
           detectedAt: e.detected_at,
           detected_at: e.detected_at,
         })),
@@ -219,9 +223,10 @@ export async function executeQuery(queryName: string, args?: any): Promise<any> 
         exception_type: res.exception_type,
         severity: res.severity,
         status: res.status,
-        customer: res.customer || "Apex Manufacturing",
-        customerTier: res.customerTier || "premium",
+        customer: res.customer_name || res.customer || "Apex Manufacturing",
+        customerTier: res.customer_tier || res.customerTier || "premium",
         orderId:
+          res.order_number ||
           res.orderId ||
           (res.related_order_id ? "ORD-" + res.case_number.replace(/\D/g, "") : "ORD-48321"),
         assignedTo: res.assigned_to ? "Floor Operator" : undefined,
