@@ -74,21 +74,21 @@ class ExceptionCase(Base):
 
     @property
     def customer_name(self) -> str | None:
-        cust = getattr(self, "customer", None)
+        cust = self.__dict__.get("customer")
         if cust:
             return cust.company_name
         return None
 
     @property
     def customer_tier(self) -> str | None:
-        cust = getattr(self, "customer", None)
+        cust = self.__dict__.get("customer")
         if cust:
             return cust.tier
         return None
 
     @property
     def order_number(self) -> str | None:
-        ord_obj = getattr(self, "order", None)
+        ord_obj = self.__dict__.get("order")
         if ord_obj:
             return ord_obj.order_number
         return None
