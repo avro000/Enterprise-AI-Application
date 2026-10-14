@@ -135,15 +135,13 @@ async def enrich():
                 requires_approval=True,
                 status="pending",
             )
-            # Low-risk action auto-executed (Module F)
+            # Human-in-the-loop review actions (Module E)
             act4 = ExceptionAction(
                 exception_id=case_flagship.id,
                 action_type="create_task",
                 description="Register warehouse floor reservation for alternative actuator SKU-2848.",
-                requires_approval=False,
-                status="executed",
-                executed_at=now - timedelta(hours=1),
-                result="Automated execution: registered in internal operations workflow.",
+                requires_approval=True,
+                status="pending",
             )
             session.add_all([act1, act2, act3, act4])
 
@@ -201,10 +199,8 @@ async def enrich():
                 exception_id=case_invoice.id,
                 action_type="create_task",
                 description="Create finance ledger adjustment verification task in operations queue.",
-                requires_approval=False,
-                status="executed",
-                executed_at=now - timedelta(hours=2),
-                result="Automated execution: registered in internal operations workflow.",
+                requires_approval=True,
+                status="pending",
             )
             session.add_all([inv_act1, inv_act2, inv_act3])
 
