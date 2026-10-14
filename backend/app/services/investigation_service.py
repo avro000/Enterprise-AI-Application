@@ -34,14 +34,16 @@ class InvestigationService:
         """Strips markdown bold markers, bullets, and stray asterisks from text for clean UI rendering."""
         if not text:
             return ""
-        # Replace **bold text** with bold text
-        cleaned = re.sub(r"\*\*([^*]+)\*\*", r"\1", text)
+        # Strip bold/italic markdown syntax
+        cleaned = re.sub(r"\*\*\*([^*]+)\*\*\*", r"\1", text)
+        cleaned = re.sub(r"\*\*([^*]+)\*\*", r"\1", cleaned)
+        cleaned = re.sub(r"\*([^*]+)\*", r"\1", cleaned)
         cleaned = re.sub(r"__([^_]+)__", r"\1", cleaned)
+        cleaned = re.sub(r"_([^_]+)_", r"\1", cleaned)
         # Remove leftover asterisks or stray stars
-        cleaned = cleaned.replace("***", "").replace("**", "")
-        # Replace leading bullet asterisks with a clean bullet
-        cleaned = re.sub(r"(?m)^\s*[\*\-]\s+", "• ", cleaned)
-        cleaned = re.sub(r"^\*+|\*+$", "", cleaned)
+        cleaned = cleaned.replace("*", "")
+        # Replace leading bullet asterisks or dashes with a clean bullet
+        cleaned = re.sub(r"(?m)^\s*[\-\•]\s+", "• ", cleaned)
         return cleaned.strip()
 
     @classmethod
@@ -94,7 +96,7 @@ class InvestigationService:
 
     @classmethod
     def _extract_individual_actions(cls, action_text: str) -> List[Dict[str, Any]]:
-        """Parses individual action items from recommendation text into list of typed actions with risk classification."""
+        """Parses individual action items from recommendation text into list of typed actions with human review requirements."""
         lines = [line.strip() for line in action_text.splitlines() if line.strip()]
         actions = []
         seen_descriptions = set()
@@ -102,43 +104,46 @@ class InvestigationService:
         for line in lines:
             clean_line = re.sub(r"^\d+[\.\)]\s*|^[-*•]\s*", "", line).strip()
             clean_line = cls._clean_text(clean_line)
-            if not clean_line or len(clean_line) < 5:
+            if not clean_line or len(clean_line) < 8:
                 continue
 
-            # Skip introductory preamble headers
-            if clean_line.endswith(":") and len(clean_line) < 40:
+            lower_line = clean_line.lower()
+
+            # Skip section headers, disclaimers, timestamps, or observational narrative
+            if clean_line.endswith(":") and len(clean_line) < 50:
                 continue
-            if clean_line.lower().startswith("based on") and clean_line.endswith(":"):
+            if any(lower_line.startswith(prefix) for prefix in (
+                "note", "please note", "notice", "disclaimer", "caveat", 
+                "warning", "fyi", "important", "observation", "summary", 
+                "specific timestamp", "timestamps", "based on", "however", 
+                "although", "as stated", "in accordance with", "per policy",
+                "recommended action", "action items"
+            )):
                 continue
 
             # Deduplicate identical or near-identical descriptions
-            norm_key = re.sub(r"\W+", "", clean_line.lower())
+            norm_key = re.sub(r"\W+", "", lower_line)
             if norm_key in seen_descriptions:
                 continue
             seen_descriptions.add(norm_key)
 
-            lower_line = clean_line.lower()
-            # Human-in-the-loop risk tier classification (PRODUCT_VISION.md Section 9)
+            # Categorize action type
             if "substitute" in lower_line or "alternative" in lower_line or "sku" in lower_line:
                 action_type = "offer_alternative"
-                requires_approval = True  # Commercial product change requires approval
             elif "supplier" in lower_line or "vendor" in lower_line or "procurement" in lower_line:
                 action_type = "escalate_supplier"
-                requires_approval = True  # Supplier contract escalation requires approval
-            elif "email" in lower_line or "draft" in lower_line or "customer" in lower_line:
+            elif "email" in lower_line or "draft" in lower_line or "customer" in lower_line or "holding" in lower_line:
                 action_type = "draft_email"
-                requires_approval = True  # External customer communication requires approval
             elif "manager" in lower_line or "lead" in lower_line or "notify" in lower_line:
                 action_type = "notify_manager"
-                requires_approval = False  # Internal notification runs automatically
             else:
                 action_type = "create_task"
-                requires_approval = False  # Internal workflow task runs automatically
 
+            # Strict product rule: ALL proposed decisions require human approval
             actions.append({
                 "action_type": action_type,
                 "description": clean_line,
-                "requires_approval": requires_approval,
+                "requires_approval": True,
             })
 
         if not actions:
@@ -148,8 +153,6 @@ class InvestigationService:
                 "requires_approval": True,
             })
 
-        # Ensure actions requiring human approval are prioritized first for governance review
-        actions.sort(key=lambda a: 0 if a["requires_approval"] else 1)
         return actions
 
     @classmethod
@@ -293,49 +296,17 @@ class InvestigationService:
         await db.execute(delete(ExceptionAction).where(ExceptionAction.exception_id == case.id))
         await db.flush()
 
-        now = datetime.now(timezone.utc)
         parsed_actions = cls._extract_individual_actions(parsed["recommended_action"])
-        auto_executed_count = 0
-        pending_count = 0
 
         for pa in parsed_actions:
-            if not pa["requires_approval"]:
-                # Module F: Low-risk tasks execute automatically
-                action = ExceptionAction(
-                    exception_id=case.id,
-                    action_type=pa["action_type"],
-                    description=pa["description"],
-                    requires_approval=False,
-                    status="executed",
-                    executed_at=now,
-                    result="Automated execution: registered in internal operations workflow.",
-                )
-                db.add(action)
-                auto_executed_count += 1
-
-                # Audit log for automated action
-                auto_audit = AuditLog(
-                    event_type="action_auto_executed",
-                    actor_type="system",
-                    entity_type="action",
-                    details={
-                        "exception_id": str(case.id),
-                        "action_type": pa["action_type"],
-                        "description": pa["description"],
-                    },
-                )
-                db.add(auto_audit)
-            else:
-                # Module E: High-risk tasks are staged in Action Center awaiting approval
-                action = ExceptionAction(
-                    exception_id=case.id,
-                    action_type=pa["action_type"],
-                    description=pa["description"],
-                    requires_approval=True,
-                    status="pending",
-                )
-                db.add(action)
-                pending_count += 1
+            action = ExceptionAction(
+                exception_id=case.id,
+                action_type=pa["action_type"],
+                description=pa["description"],
+                requires_approval=True,
+                status="pending",
+            )
+            db.add(action)
 
         # 6. Audit Log Entry for Investigation
         audit = AuditLog(
@@ -347,8 +318,8 @@ class InvestigationService:
                 "case_number": case.case_number,
                 "confidence_score": case.confidence_score,
                 "actions_count": len(parsed_actions),
-                "auto_executed": auto_executed_count,
-                "pending_approval": pending_count,
+                "auto_executed": 0,
+                "pending_approval": len(parsed_actions),
             },
         )
         db.add(audit)
@@ -378,6 +349,16 @@ class InvestigationService:
         if not action:
             raise ValueError("Action not found for this exception case")
 
+        case = action.exception_case
+        if not case:
+            raise ValueError("Associated exception case not found")
+
+        if case.status in ("resolved", "rejected"):
+            raise ValueError(f"Cannot approve action: exception case is already {case.status}.")
+
+        if action.status != "pending":
+            raise ValueError(f"Action has already been decided ({action.status}).")
+
         now = datetime.now(timezone.utc)
         action.status = "approved"
         action.approved_by = user_id
@@ -385,9 +366,13 @@ class InvestigationService:
         action.executed_at = now
         action.result = f"Simulated — action logged. {f'Comment: {comment}' if comment else ''}".strip()
 
-        # As soon as any action is approved, update case status to approved to unlock resolution
-        case = action.exception_case
-        case.status = "approved"
+        # Update case status based on all actions
+        all_actions = case.actions or []
+        all_decided = all(a.id == action.id or a.status in ("approved", "rejected", "executed") for a in all_actions)
+        if all_decided:
+            case.status = "approved"
+        else:
+            case.status = "recommendation_ready"
 
         audit = AuditLog(
             event_type="action_approved",
@@ -417,10 +402,10 @@ class InvestigationService:
         user_id: UUID,
         reason: str,
     ) -> ExceptionAction:
-        """Rejects an action item with justification and marks the exception status as rejected."""
+        """Rejects an action item with justification."""
         stmt = (
             select(ExceptionAction)
-            .options(selectinload(ExceptionAction.exception_case))
+            .options(selectinload(ExceptionAction.exception_case).selectinload(ExceptionCase.actions))
             .where(ExceptionAction.id == action_id, ExceptionAction.exception_id == exception_id)
         )
         result = await db.execute(stmt)
@@ -429,14 +414,33 @@ class InvestigationService:
         if not action:
             raise ValueError("Action not found for this exception case")
 
+        case = action.exception_case
+        if not case:
+            raise ValueError("Associated exception case not found")
+
+        if case.status in ("resolved", "rejected"):
+            raise ValueError(f"Cannot reject action: exception case is already {case.status}.")
+
+        if action.status != "pending":
+            raise ValueError(f"Action has already been decided ({action.status}).")
+
         now = datetime.now(timezone.utc)
         action.status = "rejected"
         action.approved_by = user_id
         action.approved_at = now
         action.result = f"Rejected by user. Reason: {reason}"
 
-        case = action.exception_case
-        case.status = "rejected"
+        # Update case status based on all actions
+        all_actions = case.actions or []
+        all_decided = all(a.id == action.id or a.status in ("approved", "rejected", "executed") for a in all_actions)
+        if all_decided:
+            has_approved = any((a.id != action.id and a.status in ("approved", "executed")) for a in all_actions)
+            if has_approved:
+                case.status = "approved"
+            else:
+                case.status = "rejected"
+        else:
+            case.status = "recommendation_ready"
 
         audit = AuditLog(
             event_type="action_rejected",
@@ -465,12 +469,35 @@ class InvestigationService:
         user_id: UUID,
     ) -> ExceptionCase:
         """Marks an exception case as fully resolved by an operator/manager."""
-        stmt = select(ExceptionCase).where(ExceptionCase.id == exception_id)
+        stmt = (
+            select(ExceptionCase)
+            .options(selectinload(ExceptionCase.actions))
+            .where(ExceptionCase.id == exception_id)
+        )
         result = await db.execute(stmt)
         case = result.scalars().first()
 
         if not case:
             raise ValueError("Exception case not found")
+
+        if case.status == "resolved":
+            return case
+
+        # 1. Guard against unresolved pending actions
+        pending_actions = [a for a in (case.actions or []) if a.status == "pending"]
+        if pending_actions:
+            raise ValueError(
+                f"Cannot resolve case {case.case_number}: {len(pending_actions)} action(s) still pending review. "
+                "All decisions must be approved or rejected before resolving."
+            )
+
+        # 2. Guard: Must have at least one approved action
+        approved_actions = [a for a in (case.actions or []) if a.status in ("approved", "executed")]
+        if not approved_actions:
+            raise ValueError(
+                f"Cannot resolve case {case.case_number}: No approved actions found. "
+                "At least one resolution action must be approved before resolving."
+            )
 
         now = datetime.now(timezone.utc)
         case.status = "resolved"
@@ -509,6 +536,9 @@ class InvestigationService:
 
         if not case:
             raise ValueError("Exception case not found")
+
+        if case.status in ("resolved", "rejected"):
+            raise ValueError(f"Cannot approve actions: case is already {case.status}.")
 
         now = datetime.now(timezone.utc)
         approved_actions = []
@@ -563,6 +593,8 @@ class InvestigationService:
         cases_to_check = set()
 
         for action in actions:
+            if action.exception_case and action.exception_case.status in ("resolved", "rejected"):
+                continue
             if action.status == "pending":
                 action.status = "approved"
                 action.approved_by = user_id
@@ -589,8 +621,11 @@ class InvestigationService:
                 db.add(audit)
 
         for case in cases_to_check:
-            if any(a.status in ("approved", "executed") for a in case.actions):
-                case.status = "approved"
+            if not any(a.status == "pending" for a in case.actions):
+                if any(a.status in ("approved", "executed") for a in case.actions):
+                    case.status = "approved"
+                else:
+                    case.status = "rejected"
 
         await db.commit()
         return approved_actions

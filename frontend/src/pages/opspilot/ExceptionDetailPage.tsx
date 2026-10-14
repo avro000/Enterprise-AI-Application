@@ -208,10 +208,19 @@ export default function ExceptionDetailPage() {
   };
 
   const investigated = detail.status !== "detected" && detail.status !== "investigating";
+  const isResolved = detail.status === "resolved";
+  const isRejected = detail.status === "rejected";
   const confidence = confidenceFromScore(detail.confidenceScore);
   const actions = detail.actions || [];
   const audit = detail.audit || [];
-  const pendingActions = actions.filter((a) => a.status === "pending");
+  const pendingActions = isResolved || isRejected ? [] : actions.filter((a: any) => a.status === "pending");
+  const approvedActions = actions.filter((a: any) => a.status === "approved" || a.status === "executed");
+  const canResolve =
+    !isResolved &&
+    !isRejected &&
+    actions.length > 0 &&
+    actions.every((a: any) => a.status !== "pending") &&
+    approvedActions.length > 0;
 
   return (
     <div className="flex flex-col gap-4">
@@ -462,34 +471,38 @@ export default function ExceptionDetailPage() {
               </Button>
             )}
 
-            {(detail.status === "approved" ||
-              actions.some((a: any) => a.status === "approved" || a.status === "executed")) &&
-              detail.status !== "resolved" && (
-                canAct ? (
-                  <Button
-                    className="clay-btn mt-1"
-                    style={{ background: "var(--success)", color: "#fff" }}
-                    disabled={resolving}
-                    onClick={() => void handleResolve()}
-                  >
-                    {resolving ? (
-                      <>
-                        <Loader2 className="size-4 animate-spin" /> Verifying…
-                      </>
-                    ) : (
-                      <>
-                        <CheckCircle2 className="size-4" /> Mark resolved
-                      </>
-                    )}
-                  </Button>
-                ) : (
-                  <p className="rounded-2xl bg-secondary/70 px-3 py-2 text-[11px] leading-4 text-muted-foreground">
-                    Awaiting manager verification.
-                  </p>
-                )
-              )}
+            {canResolve && (
+              canAct ? (
+                <Button
+                  className="clay-btn mt-1"
+                  style={{ background: "var(--success)", color: "#fff" }}
+                  disabled={resolving}
+                  onClick={() => void handleResolve()}
+                >
+                  {resolving ? (
+                    <>
+                      <Loader2 className="size-4 animate-spin" /> Verifying…
+                    </>
+                  ) : (
+                    <>
+                      <CheckCircle2 className="size-4" /> Mark resolved
+                    </>
+                  )}
+                </Button>
+              ) : (
+                <p className="rounded-2xl bg-secondary/70 px-3 py-2 text-[11px] leading-4 text-muted-foreground">
+                  Awaiting manager verification.
+                </p>
+              )
+            )}
 
-            {detail.status === "resolved" && (
+            {!isResolved && !isRejected && investigated && pendingActions.length > 0 && (
+              <div className="rounded-2xl bg-amber-500/10 border border-amber-500/20 px-3 py-2 text-[11px] leading-4 text-amber-900 dark:text-amber-200">
+                All proposed decisions must be reviewed (approved or rejected) before this exception can be marked as resolved.
+              </div>
+            )}
+
+            {isResolved && (
               <div
                 className="flex items-center gap-2 rounded-2xl px-3 py-2 text-xs font-medium"
                 style={{
@@ -502,7 +515,7 @@ export default function ExceptionDetailPage() {
               </div>
             )}
 
-            {detail.status === "rejected" && (
+            {isRejected && (
               <div
                 className="flex items-center gap-2 rounded-2xl px-3 py-2 text-xs font-medium"
                 style={{
@@ -524,13 +537,15 @@ export default function ExceptionDetailPage() {
                 className="pill"
                 style={
                   {
-                    "--pill-color": pendingActions.length
-                      ? "var(--warning)"
-                      : "var(--success)",
+                    "--pill-color": isResolved
+                      ? "var(--success)"
+                      : pendingActions.length
+                        ? "var(--warning)"
+                        : "var(--success)",
                   } as CSSProperties
                 }
               >
-                {pendingActions.length} pending
+                {isResolved ? "0 pending" : `${pendingActions.length} pending`}
               </span>
             </div>
 
@@ -541,7 +556,7 @@ export default function ExceptionDetailPage() {
               </p>
             ) : (
               <div className="flex flex-col gap-3">
-                {actions.map((action) => (
+                {actions.map((action: any) => (
                   <div
                     key={action._id}
                     className="clay-press flex flex-col gap-2.5 rounded-2xl p-3.5"
@@ -554,9 +569,15 @@ export default function ExceptionDetailPage() {
                       {action.status === "pending" && (
                         <span
                           className="pill"
-                          style={{ "--pill-color": "var(--status-detected)" } as CSSProperties}
+                          style={
+                            {
+                              "--pill-color": isResolved
+                                ? "var(--muted-foreground)"
+                                : "var(--status-detected)",
+                            } as CSSProperties
+                          }
                         >
-                          awaiting approval
+                          {isResolved ? "closed" : "awaiting approval"}
                         </span>
                       )}
                       {action.status === "executed" && (
@@ -564,7 +585,7 @@ export default function ExceptionDetailPage() {
                           className="pill"
                           style={{ "--pill-color": "var(--success)" } as CSSProperties}
                         >
-                          <CheckCircle2 className="size-3" /> auto-executed · low risk
+                          <CheckCircle2 className="size-3" /> executed
                         </span>
                       )}
                       {action.status === "approved" && (
@@ -585,7 +606,7 @@ export default function ExceptionDetailPage() {
                       )}
                     </div>
 
-                    {action.status === "pending" ? (
+                    {!isResolved && !isRejected && action.status === "pending" ? (
                       canAct ? (
                         <div className="flex gap-2">
                           <Button
@@ -633,7 +654,7 @@ export default function ExceptionDetailPage() {
               </div>
             )}
 
-            {pendingActions.length > 0 && (
+            {!isResolved && !isRejected && pendingActions.length > 0 && (
               <p className="flex items-start gap-1.5 text-[11px] leading-4 text-muted-foreground">
                 <ShieldAlert className="mt-0.5 size-3.5 shrink-0" />
                 High-risk actions (refunds, concessions, contract changes) always
