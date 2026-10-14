@@ -46,19 +46,19 @@ export function StatusBadge({ status }: { status: ExceptionStatus }) {
   return <Pill color={STATUS_VAR[status]}>{STATUS_LABEL[status]}</Pill>;
 }
 
-export function TierBadge({ tier }: { tier: "standard" | "premium" | "enterprise" }) {
+export function TierBadge({ tier }: { tier?: string | null }) {
+  if (!tier) return null;
+  const normalized = tier.toLowerCase();
+  const color =
+    normalized === "enterprise"
+      ? "var(--status-recommendation)"
+      : normalized === "premium"
+        ? "var(--severity-high)"
+        : "var(--status-resolved)";
+
   return (
-    <Pill
-      color={
-        tier === "enterprise"
-          ? "var(--status-recommendation)"
-          : tier === "premium"
-            ? "var(--severity-high)"
-            : "var(--status-resolved)"
-      }
-      className="capitalize"
-    >
-      {tier}
+    <Pill color={color} className="capitalize text-[10px] font-medium tracking-wide">
+      {normalized}
     </Pill>
   );
 }
