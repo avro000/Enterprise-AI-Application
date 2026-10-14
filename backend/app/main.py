@@ -5,7 +5,7 @@ import logging
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api import auth, chat, dashboard, documents, exceptions, health
+from app.api import auth, chat, dashboard, documents, exceptions, health, users
 from app.config import settings
 from app.core.scheduler import start_scheduler, stop_scheduler
 from app.database import init_db
@@ -61,6 +61,7 @@ app.add_middleware(
 # Register API Routers
 app.include_router(health.router, prefix="/api")
 app.include_router(auth.router, prefix="/api")
+app.include_router(users.router, prefix="/api")
 app.include_router(documents.router, prefix="/api")
 app.include_router(chat.router, prefix="/api")
 app.include_router(exceptions.router, prefix="/api")

@@ -62,3 +62,8 @@ class VerifyOTPResponse(BaseModel):
 class ResetPasswordRequest(BaseModel):
     reset_token: str
     new_password: str = Field(..., min_length=8, description="New password must be at least 8 characters")
+
+
+class UpdateUserRoleRequest(BaseModel):
+    role: str = Field(..., pattern="^(admin|manager|operator)$", description="New user role")
+

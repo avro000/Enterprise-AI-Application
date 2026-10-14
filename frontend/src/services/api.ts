@@ -137,6 +137,22 @@ export const authApi = {
 };
 
 /* ------------------------------------------------------------------ */
+/* Users & Roles API                                                  */
+/* ------------------------------------------------------------------ */
+
+export const usersApi = {
+  list: async (): Promise<UserProfile[]> => {
+    const res = await apiClient.get<UserProfile[]>("/users");
+    return res.data;
+  },
+
+  updateRole: async (userId: string, role: string): Promise<UserProfile> => {
+    const res = await apiClient.patch<UserProfile>(`/users/${userId}/role`, { role });
+    return res.data;
+  },
+};
+
+/* ------------------------------------------------------------------ */
 /* Dashboard API                                                      */
 /* ------------------------------------------------------------------ */
 
