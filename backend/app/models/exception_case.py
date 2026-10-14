@@ -71,3 +71,26 @@ class ExceptionCase(Base):
         name = self.resolver_name
         desig = self.resolver_designation
         return f"{name} ({desig})" if name and desig else name
+
+    @property
+    def customer_name(self) -> str | None:
+        cust = getattr(self, "customer", None)
+        if cust:
+            return cust.company_name
+        return None
+
+    @property
+    def customer_tier(self) -> str | None:
+        cust = getattr(self, "customer", None)
+        if cust:
+            return cust.tier
+        return None
+
+    @property
+    def order_number(self) -> str | None:
+        ord_obj = getattr(self, "order", None)
+        if ord_obj:
+            return ord_obj.order_number
+        return None
+
+
