@@ -15,18 +15,19 @@ OpsPilot AI is an AI-powered enterprise operations assistant that combines RAG-b
 
 ## 🛠️ Technology Stack
 
-- **Backend**: Python 3.12, FastAPI, SQLAlchemy 2.0, asyncpg, Alembic, FAISS, sentence-transformers, Google Generative AI / OpenAI, Pydantic v2, APScheduler.
-- **Frontend**: React 18.3, Vite 5.4, React Router 6.26, Tailwind CSS 3.4, Axios, Lucide React, React Hot Toast.
-- **Infrastructure**: PostgreSQL 16, Docker & Docker Compose.
+- **Backend**: Python 3.12, FastAPI, SQLAlchemy 2.0, asyncpg, Alembic, Neon Serverless PostgreSQL + pgvector, boto3 (Neon S3 Object Storage), sentence-transformers, Google Generative AI / OpenAI, Pydantic v2, APScheduler.
+- **Frontend**: React 19, Vite 7, Tailwind CSS 4, Radix UI, Framer Motion, Lucide React, Sonner (Toaster), Freebuff Claymorphism UI design, Axios, Input OTP.
+- **Cloud Infrastructure**: Neon Serverless Cloud PostgreSQL 18.6 (`mute-moon-34613447`), Neon Native `pgvector` v0.8.6 (HNSW Cosine Indexing), Neon Cloud S3-Compatible Object Storage (`docs` bucket for zero-disk cloud file management, streaming downloads, and presigned URLs).
+- **Authentication**: Enterprise authentication with JWT credentials (bcrypt, HS256), 5-minute registration OTP activation loop, 5-minute password recovery OTP, and three-tier RBAC (admin → manager → operator).
 
 ---
 
 ## 🚀 Quickstart (Local Development)
 
 ### 1. Prerequisites
-- Docker & Docker Compose (or local PostgreSQL 16)
 - Python 3.10+
 - Node.js 18+ and npm
+- Neon PostgreSQL connection string in `backend/.env`
 
 ### 2. Environment Configuration
 Create environment files from templates:
@@ -38,12 +39,36 @@ copy backend\.env.example backend\.env
 copy frontend\.env.example frontend\.env
 ```
 
-### 3. Running with Docker Compose
+### 3. Running Locally
+
+#### Start the Backend (Terminal 1)
 ```bash
-docker-compose up --build
+cd backend
+.venv\Scripts\activate
+uvicorn app.main:app --host 0.0.0.0 --port 8000
 ```
 - Backend API: `http://localhost:8000` (Docs: `http://localhost:8000/docs`)
-- Frontend App: `http://localhost:5173`
+
+#### Start the Frontend (Terminal 2)
+```bash
+cd frontend
+npm install
+npm run dev
+```
+- Frontend App: `http://localhost:5173` (Proxies all `/api` calls directly to the FastAPI backend)
+
+---
+
+## 🔐 Enterprise Authentication Architecture
+
+OpsPilot AI implements an enterprise-grade authentication system designed for operations management:
+
+- **JWT Credentials**: Secure password hashing with bcrypt, timed JWT tokens (HS256) with role claims.
+- **Three-Tier RBAC**: Strict role-based access control (`admin` → `manager` → `operator`) with FastAPI dependency-injection enforcement.
+- **Real-Time Email Deliverability & Anti-Abuse**: Registration validates active DNS MX records and host availability (rejecting non-existent domains such as `OwaQXzfJVwg0@lxJycmzVbXzSd.pb`) and blocks known temporary/disposable email providers.
+- **5-Minute Registration OTP Activation Loop**: On registration, accounts are created with `is_verified: False`. A 6-digit OTP code valid for **5 minutes** is dispatched via SMTP. The user must verify the OTP (`/api/auth/verify-registration-otp`) before login is permitted (unverified login attempts return `403 Forbidden`).
+- **5-Minute Password Recovery**: 6-digit OTP dispatched via SMTP valid for **5 minutes** → verified → single-use signed reset token → password updated.
+- **Full Audit Trail**: Every authentication and security event (registration, email verification, login, password reset requests) is logged to `audit_log`.
 
 ---
 

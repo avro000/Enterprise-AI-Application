@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="100%" height="100%">
+  <defs>
+    <linearGradient id="opspilot-bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#c1552e" />
+      <stop offset="50%" stop-color="#cc5f36" />
+      <stop offset="100%" stop-color="#d9744e" />
+    </linearGradient>
+    <linearGradient id="opspilot-accent" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff" />
+      <stop offset="100%" stop-color="#fff2ea" />
+    </linearGradient>
+    <filter id="clay-depth" x="-10%" y="-10%" width="130%" height="130%">
+      <feDropShadow dx="2" dy="3" stdDeviation="2.5" flood-color="#552211" flood-opacity="0.25" />
+    </filter>
+  </defs>
+
+  <!-- Squircle Base Canvas with Clay Depth -->
+  <rect x="8" y="8" width="112" height="112" rx="30" fill="url(#opspilot-bg)" />
+  <rect x="9" y="9" width="110" height="110" rx="29" fill="none" stroke="#ffffff" stroke-width="1.5" stroke-opacity="0.3" />
+
+  <!-- Orbital Guidance Ring (Telemetry Radar) -->
+  <circle cx="64" cy="64" r="38" fill="none" stroke="#ffffff" stroke-opacity="0.18" stroke-width="2" stroke-dasharray="6 4" />
+  <circle cx="64" cy="64" r="26" fill="none" stroke="#ffffff" stroke-opacity="0.25" stroke-width="1.5" />
+
+  <!-- Pilot Navigation Delta / Chevron Wings (Aeronautics Symbol) -->
+  <g filter="url(#clay-depth)">
+    <!-- Main ascending supersonic pilot chevron -->
+    <path
+      d="M64 28 L94 80 L76 75 L64 63 L52 75 L34 80 Z"
+      fill="url(#opspilot-accent)"
+    />
+    <!-- Inset cockpit / Core focal point -->
+    <polygon
+      points="64,44 73,72 64,66 55,72"
+      fill="#c1552e"
+      opacity="0.9"
+    />
+    <!-- Forward thrust beacon dot -->
+    <circle cx="64" cy="94" r="3.5" fill="#ffffff" opacity="0.9" />
+    <circle cx="64" cy="103" r="2" fill="#ffffff" opacity="0.6" />
+  </g>
+</svg>
