@@ -80,10 +80,10 @@ export default function AdminPage() {
     );
   }
 
-  const changeRole = async (userId: Id<"users">, role: OpsRole) => {
+  const changeRole = async (userId: string, role: OpsRole) => {
     setBusyId(userId);
     try {
-      await setUserRole({ userId, role });
+      await setUserRole({ userId: userId as any, role });
       toast.success(`Role updated — this user is now ${ROLE_LABEL[role]}.`);
     } catch (error) {
       console.error(error);
@@ -173,7 +173,10 @@ export default function AdminPage() {
               <tbody>
                 {users.map((u) => {
                   const role = effectiveRole(u.role ?? undefined);
-                  const isSelf = u.id === user?._id;
+                  const isSelf =
+                    u.id === user?._id ||
+                    u.id === (user as any)?.id ||
+                    (!!u.email && u.email.toLowerCase() === user?.email?.toLowerCase());
                   return (
                     <tr key={u.id} className="border-b border-border/50 last:border-0">
                       <td className="px-4 py-3">

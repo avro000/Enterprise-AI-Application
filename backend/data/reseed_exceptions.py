@@ -53,6 +53,26 @@ async def reseed():
 
         logger.info("Cleaned operational data. Preserved users and knowledge base documents.")
 
+        # Ensure default workspace accounts exist alongside existing user
+        from app.core.security import get_password_hash
+        team = [
+            ("admin@opspilot.com", "System Admin", "Admin@123456", "admin"),
+            ("manager@opspilot.com", "Ops Manager", "Manager@123456", "manager"),
+            ("operator@opspilot.com", "Floor Operator", "Operator@123456", "operator"),
+        ]
+        for email, name, pwd, role in team:
+            existing_user = (await session.execute(select(User).where(User.email == email))).scalars().first()
+            if not existing_user:
+                session.add(User(
+                    email=email,
+                    name=name,
+                    password_hash=get_password_hash(pwd),
+                    role=role,
+                    is_active=True,
+                    is_verified=True,
+                ))
+        await session.commit()
+
         # 2. Reseed suppliers, customers, inventory, orders
         from data.clean_and_seed import seed_operational_data
         await seed_operational_data(session)

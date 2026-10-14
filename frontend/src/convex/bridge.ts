@@ -3,6 +3,7 @@ import {
   dashboardApi,
   documentsApi,
   exceptionsApi,
+  usersApi,
   type DashboardMetrics,
   type ExceptionDetail,
   type KnowledgeDocumentItem,
@@ -305,32 +306,22 @@ export async function executeQuery(queryName: string, args?: any): Promise<any> 
     }
 
     case "opspilot:listUsers": {
-      return [
-        {
-          _id: "admin-1",
-          name: "System Admin",
-          email: "admin@opspilot.com",
-          role: "admin",
-          is_active: true,
-          _creationTime: Date.now() - 86400000 * 3,
-        },
-        {
-          _id: "manager-1",
-          name: "Ops Manager",
-          email: "manager@opspilot.com",
-          role: "manager",
-          is_active: true,
-          _creationTime: Date.now() - 86400000 * 2,
-        },
-        {
-          _id: "operator-1",
-          name: "Floor Operator",
-          email: "operator@opspilot.com",
-          role: "operator",
-          is_active: true,
-          _creationTime: Date.now() - 86400000,
-        },
-      ];
+      try {
+        const dbUsers = await usersApi.list();
+        return (dbUsers || []).map((u: any) => ({
+          id: u.id,
+          _id: u.id,
+          name: u.name,
+          email: u.email,
+          role: u.role,
+          is_active: u.is_active,
+          isAnonymous: false,
+          joinedAt: u.created_at ? new Date(u.created_at).getTime() : Date.now(),
+        }));
+      } catch (err) {
+        console.error("Failed to list users from database:", err);
+        return [];
+      }
     }
 
     case "users:currentUser": {
@@ -423,8 +414,27 @@ export async function executeMutation(mutationName: string, args?: any): Promise
 
     case "opspilot:setRole":
     case "opspilot:setUserRole": {
-      // Role switching without re-authentication is disabled for security
-      return { success: false, error: "Role switching requires explicit re-authentication." };
+      const targetUserId = args?.userId || args?.id;
+      const targetRole = args?.role;
+      if (!targetUserId || !targetRole) {
+        throw new Error("Missing userId or role parameter.");
+      }
+      result = await usersApi.updateRole(targetUserId, targetRole);
+      globalQueryCache.invalidate("opspilot:listUsers");
+      // If current user's role was changed, update local storage
+      try {
+        const stored = localStorage.getItem("opspilot_user");
+        if (stored) {
+          const current = JSON.parse(stored);
+          if (current.id === targetUserId || current._id === targetUserId) {
+            current.role = targetRole;
+            localStorage.setItem("opspilot_user", JSON.stringify(current));
+          }
+        }
+      } catch {
+        // ignore
+      }
+      break;
     }
 
     default:
