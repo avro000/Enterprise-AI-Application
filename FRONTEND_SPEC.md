@@ -2,7 +2,7 @@
 
 > **For:** Frontend Developer (using Freebuff.com for design + code generation)
 > **Backend API Base URL:** `http://localhost:8000` (development)
-> **Tech Stack:** React 18.3+ · Vite 5.4+ · Tailwind CSS 3.4+ · React Router 6.26+ · Axios 1.7+ · Lucide React (icons) · React Hot Toast (notifications)
+> **Tech Stack:** React 19+ · Vite 7+ · Tailwind CSS 4+ · Radix UI · Framer Motion · React Router 7+ · Axios 1.13+ · Lucide React · Sonner (Toaster) · Freebuff Claymorphism Design System
 
 ---
 

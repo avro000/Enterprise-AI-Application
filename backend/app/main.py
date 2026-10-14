@@ -5,7 +5,10 @@ import logging
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from app.api import auth, chat, dashboard, documents, exceptions, health
 from app.config import settings
+from app.core.scheduler import start_scheduler, stop_scheduler
+from app.database import init_db
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("opspilot")
@@ -15,14 +18,27 @@ logger = logging.getLogger("opspilot")
 async def lifespan(app: FastAPI):
     """Application lifespan context manager for startup and shutdown routines."""
     logger.info("OpsPilot AI starting up...")
-    # 1. Connect to database / verify schema
-    # 2. Load embedding model
-    # 3. Load FAISS index from disk
-    # 4. Start scheduler for exception detection
+    # 1. Initialize database schema
+    try:
+        await init_db()
+        logger.info("Database schema initialized/verified.")
+    except Exception as e:
+        logger.warning(f"Database schema init notice: {e}")
+
+    # 2. Start scheduler for exception detection
+    try:
+        start_scheduler()
+    except Exception as e:
+        logger.error(f"Failed to start scheduler: {e}")
+
     yield
+
     logger.info("OpsPilot AI shutting down...")
-    # 1. Save FAISS index
-    # 2. Stop scheduler
+    # 1. Stop scheduler
+    try:
+        stop_scheduler()
+    except Exception as e:
+        logger.error(f"Failed to stop scheduler: {e}")
 
 
 app = FastAPI(
@@ -42,14 +58,23 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Register API Routers
+app.include_router(health.router, prefix="/api")
+app.include_router(auth.router, prefix="/api")
+app.include_router(documents.router, prefix="/api")
+app.include_router(chat.router, prefix="/api")
+app.include_router(exceptions.router, prefix="/api")
+app.include_router(dashboard.router, prefix="/api")
 
-@app.get("/api/health", tags=["Health"])
-async def health_check():
-    """Health check endpoint placeholder."""
+
+@app.get("/", tags=["Root"])
+async def root():
+    """Root metadata endpoint."""
     return {
-        "status": "healthy",
-        "database": "connected",
-        "vector_store": "loaded",
-        "documents_indexed": 0,
-        "vectors_count": 0,
+        "project": "OpsPilot AI",
+        "description": "Enterprise Operations Intelligence & Action Platform",
+        "status": "online",
+        "version": "0.1.0",
+        "docs": "/docs",
     }
+
