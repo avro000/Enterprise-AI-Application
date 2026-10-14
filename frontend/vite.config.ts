@@ -10,11 +10,11 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 export default defineConfig({
   plugins: [react(), tailwindcss()],
   resolve: {
-    alias: [
-      { find: "@", replacement: path.resolve(__dirname, "src") },
-      { find: "convex/react", replacement: path.resolve(__dirname, "src/convex/react.tsx") },
-      { find: "@convex-dev/auth/react", replacement: path.resolve(__dirname, "src/convex/react.tsx") },
-    ],
+    alias: {
+      "@": path.resolve(__dirname, "src"),
+      "convex/react": path.resolve(__dirname, "src/convex/react.tsx"),
+      "@convex-dev/auth/react": path.resolve(__dirname, "src/convex/react.tsx"),
+    },
     extensions: [".mjs", ".js", ".ts", ".jsx", ".tsx", ".json"],
     dedupe: ["react", "react/jsx-runtime", "react-dom", "react-dom/client"],
   },

@@ -108,8 +108,10 @@ export function confidenceFromScore(score: number | undefined): Confidence {
   return "low";
 }
 
-export function relativeTime(ts: number): string {
-  const diff = Date.now() - ts;
+export function relativeTime(ts: number | string | Date): string {
+  const time = typeof ts === "number" ? ts : new Date(ts).getTime();
+  if (isNaN(time)) return "just now";
+  const diff = Date.now() - time;
   const minutes = Math.floor(diff / 60_000);
   if (minutes < 1) return "just now";
   if (minutes < 60) return `${minutes}m ago`;
@@ -117,14 +119,16 @@ export function relativeTime(ts: number): string {
   if (hours < 24) return `${hours}h ago`;
   const days = Math.floor(hours / 24);
   if (days < 7) return `${days}d ago`;
-  return new Date(ts).toLocaleDateString(undefined, {
+  return new Date(time).toLocaleDateString(undefined, {
     month: "short",
     day: "numeric",
   });
 }
 
-export function absoluteTime(ts: number): string {
-  return new Date(ts).toLocaleString(undefined, {
+export function absoluteTime(ts: number | string | Date): string {
+  const time = typeof ts === "number" ? ts : new Date(ts).getTime();
+  if (isNaN(time)) return "";
+  return new Date(time).toLocaleString(undefined, {
     month: "short",
     day: "numeric",
     hour: "numeric",
