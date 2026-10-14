@@ -29,6 +29,21 @@ class InvestigationService:
     and drafts AI root-cause analysis and actions.
     """
 
+    @staticmethod
+    def _clean_text(text: str) -> str:
+        """Strips markdown bold markers, bullets, and stray asterisks from text for clean UI rendering."""
+        if not text:
+            return ""
+        # Replace **bold text** with bold text
+        cleaned = re.sub(r"\*\*([^*]+)\*\*", r"\1", text)
+        cleaned = re.sub(r"__([^_]+)__", r"\1", cleaned)
+        # Remove leftover asterisks or stray stars
+        cleaned = cleaned.replace("***", "").replace("**", "")
+        # Replace leading bullet asterisks with a clean bullet
+        cleaned = re.sub(r"(?m)^\s*[\*\-]\s+", "• ", cleaned)
+        cleaned = re.sub(r"^\*+|\*+$", "", cleaned)
+        return cleaned.strip()
+
     @classmethod
     def _parse_llm_investigation(cls, text: str) -> Dict[str, Any]:
         """Extracts structured sections (root cause, business impact, actions, confidence) from LLM output."""
@@ -44,15 +59,15 @@ class InvestigationService:
 
         rc_match = re.search(rc_pattern, text, re.DOTALL | re.IGNORECASE)
         if rc_match:
-            root_cause = re.sub(r"^[\*\s\n\r]+", "", rc_match.group(1)).strip()
+            root_cause = cls._clean_text(rc_match.group(1))
 
         bi_match = re.search(bi_pattern, text, re.DOTALL | re.IGNORECASE)
         if bi_match:
-            business_impact = re.sub(r"^[\*\s\n\r]+", "", bi_match.group(1)).strip()
+            business_impact = cls._clean_text(bi_match.group(1))
 
         ra_match = re.search(ra_pattern, text, re.DOTALL | re.IGNORECASE)
         if ra_match:
-            recommended_action = re.sub(r"^[\*\s\n\r]+", "", ra_match.group(1)).strip()
+            recommended_action = cls._clean_text(ra_match.group(1))
 
         conf_match = re.search(conf_pattern, text, re.IGNORECASE)
         if conf_match:
@@ -66,7 +81,7 @@ class InvestigationService:
 
         # Fallback if unformatted text
         if not root_cause:
-            root_cause = text.strip()
+            root_cause = cls._clean_text(text)
         if not recommended_action:
             recommended_action = "Review order with customer representative and verify warehouse stock."
 
@@ -86,11 +101,12 @@ class InvestigationService:
 
         for line in lines:
             clean_line = re.sub(r"^\d+[\.\)]\s*|^[-*•]\s*", "", line).strip()
+            clean_line = cls._clean_text(clean_line)
             if not clean_line or len(clean_line) < 5:
                 continue
 
             # Skip introductory preamble headers
-            if clean_line.endswith(":") and not ("**" in clean_line and len(clean_line) > 30):
+            if clean_line.endswith(":") and len(clean_line) < 40:
                 continue
             if clean_line.lower().startswith("based on") and clean_line.endswith(":"):
                 continue
@@ -369,11 +385,9 @@ class InvestigationService:
         action.executed_at = now
         action.result = f"Simulated — action logged. {f'Comment: {comment}' if comment else ''}".strip()
 
-        # Check if all actions on the case are approved
+        # As soon as any action is approved, update case status to approved to unlock resolution
         case = action.exception_case
-        all_approved = all(a.status == "approved" or a.id == action.id for a in case.actions)
-        if all_approved:
-            case.status = "approved"
+        case.status = "approved"
 
         audit = AuditLog(
             event_type="action_approved",
@@ -575,7 +589,7 @@ class InvestigationService:
                 db.add(audit)
 
         for case in cases_to_check:
-            if all(a.status in ("approved", "executed") for a in case.actions):
+            if any(a.status in ("approved", "executed") for a in case.actions):
                 case.status = "approved"
 
         await db.commit()

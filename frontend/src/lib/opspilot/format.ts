@@ -158,3 +158,18 @@ export const ROLE_VAR: Record<OpsRole, string> = {
   manager: "var(--info)",
   operator: "var(--status-resolved)",
 };
+
+/**
+ * Strips raw markdown asterisks, bold tags, and formatting artifacts
+ * so LLM output displays as clean, legible text without stray asterisks.
+ */
+export function stripMarkdownAsterisks(text: string | undefined | null): string {
+  if (!text) return "";
+  return text
+    .replace(/\*\*([^*]+)\*\*/g, "$1")
+    .replace(/__([^_]+)__/g, "$1")
+    .replace(/\*{2,}/g, "")
+    .replace(/(^|\n)\s*[\*\-]\s+/g, "$1• ")
+    .replace(/^\*+|\*+$/g, "")
+    .trim();
+}

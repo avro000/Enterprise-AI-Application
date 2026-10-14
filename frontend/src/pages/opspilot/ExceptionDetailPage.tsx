@@ -25,6 +25,7 @@ import {
   effectiveRole,
   humanizeType,
   relativeTime,
+  stripMarkdownAsterisks,
   type ExceptionStatus,
 } from "@/lib/opspilot/format";
 import { useMutation, useQuery } from "convex/react";
@@ -86,19 +87,8 @@ function SectionCard({
         </h3>
       </div>
       {typeof children === "string" ? (
-        <div className="text-sm leading-6 text-foreground/90">
-          <ReactMarkdown
-            remarkPlugins={[remarkGfm]}
-            components={{
-              p: ({ children }) => <p className="mb-2 last:mb-0 leading-6">{children}</p>,
-              strong: ({ children }) => <strong className="font-semibold text-foreground">{children}</strong>,
-              ul: ({ children }) => <ul className="my-1.5 ml-4 list-disc space-y-1">{children}</ul>,
-              ol: ({ children }) => <ol className="my-1.5 ml-4 list-decimal space-y-1">{children}</ol>,
-              li: ({ children }) => <li className="leading-6">{children}</li>,
-            }}
-          >
-            {children}
-          </ReactMarkdown>
+        <div className="text-sm leading-6 text-foreground/90 whitespace-pre-line">
+          {stripMarkdownAsterisks(children)}
         </div>
       ) : (
         <div className="text-sm leading-6">{children}</div>
@@ -472,35 +462,32 @@ export default function ExceptionDetailPage() {
               </Button>
             )}
 
-            {detail.status === "recommendation_ready" && pendingActions.length === 0 && (
-              <p className="rounded-2xl bg-secondary/70 px-3 py-2 text-[11px] leading-4 text-muted-foreground">
-                All staged actions have been decided.
-              </p>
-            )}
-
-            {detail.status === "approved" &&
-              (canAct ? (
-                <Button
-                  className="clay-btn mt-1"
-                  style={{ background: "var(--success)", color: "#fff" }}
-                  disabled={resolving}
-                  onClick={() => void handleResolve()}
-                >
-                  {resolving ? (
-                    <>
-                      <Loader2 className="size-4 animate-spin" /> Verifying…
-                    </>
-                  ) : (
-                    <>
-                      <CheckCircle2 className="size-4" /> Mark resolved
-                    </>
-                  )}
-                </Button>
-              ) : (
-                <p className="rounded-2xl bg-secondary/70 px-3 py-2 text-[11px] leading-4 text-muted-foreground">
-                  Awaiting manager verification.
-                </p>
-              ))}
+            {(detail.status === "approved" ||
+              actions.some((a: any) => a.status === "approved" || a.status === "executed")) &&
+              detail.status !== "resolved" && (
+                canAct ? (
+                  <Button
+                    className="clay-btn mt-1"
+                    style={{ background: "var(--success)", color: "#fff" }}
+                    disabled={resolving}
+                    onClick={() => void handleResolve()}
+                  >
+                    {resolving ? (
+                      <>
+                        <Loader2 className="size-4 animate-spin" /> Verifying…
+                      </>
+                    ) : (
+                      <>
+                        <CheckCircle2 className="size-4" /> Mark resolved
+                      </>
+                    )}
+                  </Button>
+                ) : (
+                  <p className="rounded-2xl bg-secondary/70 px-3 py-2 text-[11px] leading-4 text-muted-foreground">
+                    Awaiting manager verification.
+                  </p>
+                )
+              )}
 
             {detail.status === "resolved" && (
               <div
@@ -560,15 +547,7 @@ export default function ExceptionDetailPage() {
                     className="clay-press flex flex-col gap-2.5 rounded-2xl p-3.5"
                   >
                     <div className="text-xs leading-5 text-foreground/90">
-                      <ReactMarkdown
-                        remarkPlugins={[remarkGfm]}
-                        components={{
-                          p: ({ children }) => <p className="mb-0 leading-5">{children}</p>,
-                          strong: ({ children }) => <strong className="font-semibold text-foreground">{children}</strong>,
-                        }}
-                      >
-                        {action.description}
-                      </ReactMarkdown>
+                      {stripMarkdownAsterisks(action.description)}
                     </div>
                     <div className="flex flex-wrap items-center gap-1.5">
                       <RiskBadge risk={action.riskTier} />

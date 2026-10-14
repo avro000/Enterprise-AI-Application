@@ -241,9 +241,9 @@ class ContextFusionService:
             prompt = (
                 f"You are OpsPilot AI. Present the following live business data in a comprehensive, well-structured, detailed Markdown report matching enterprise operations standards.\n\n"
                 f"Structure your response with:\n"
-                f"1. A greeting and order status header with emoji (e.g. ### 📦 **Order Summary**)\n"
+                f"1. A greeting and order status header with emoji (e.g. ### 📦 Order Summary)\n"
                 f"2. Bullet list of key order details (Order Number, Status, Customer, Contracted SLA, Total Amount, Order Date, Expected Delivery Date)\n"
-                f"3. A line break and ### 📋 **Line Items & Inventory Details** with all ordered SKUs, quantities, warehouse stock, and supplier details (supplier name, status, lead time, reliability)\n"
+                f"3. A line break and ### 📋 Line Items & Inventory Details with all ordered SKUs, quantities, warehouse stock, and supplier details (supplier name, status, lead time, reliability)\n"
                 f"4. A proactive closing offer for real-time tracking or replenishment.\n\n"
                 f"LIVE BUSINESS DATA:\n{structured_context}\n\n"
                 f"USER QUERY: {question}"

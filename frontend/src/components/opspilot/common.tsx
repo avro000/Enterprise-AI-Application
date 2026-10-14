@@ -23,6 +23,7 @@ import {
   ShieldCheck,
   Sparkles,
 } from "lucide-react";
+import { stripMarkdownAsterisks } from "@/lib/opspilot/format";
 import type { ChatSource } from "@/lib/opspilot/mockAi";
 
 /* ---------------------------------------------------------------- */
@@ -286,7 +287,7 @@ export function AuditTimeline({
               {meta.icon}
             </span>
             <div className="min-w-0 pt-0.5">
-              <p className="text-xs leading-5 text-foreground">{e.event}</p>
+              <p className="text-xs leading-5 text-foreground">{stripMarkdownAsterisks(e.event)}</p>
               <p className="text-[11px] text-muted-foreground">
                 {(() => {
                   const match = e.actor?.match(/^(.*?)\s*\((.*?)\)$/);

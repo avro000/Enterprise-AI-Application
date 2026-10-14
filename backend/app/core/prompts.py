@@ -36,6 +36,7 @@ Rules:
 - Only cite facts present in the data.
 - If data is missing, say what's missing.
 - Reference specific policy documents when making recommendations.
+- Format with clean plain text. Do not output markdown asterisks (**) or bullet stars (*). Use standard hyphens or numbers for lists.
 
 ---
 LIVE BUSINESS DATA:

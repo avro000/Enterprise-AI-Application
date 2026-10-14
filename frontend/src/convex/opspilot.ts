@@ -966,13 +966,14 @@ async function syncExceptionStatus(
     .withIndex("by_exception", (q) => q.eq("exceptionId", exceptionId))
     .collect();
 
-  const pending = actions.filter((a) => a.status === "pending");
-  if (pending.length > 0) return;
+  const anyApproved = actions.some((a) => a.status === "approved" || a.status === "executed");
+  const allRejected = actions.length > 0 && actions.every((a) => a.status === "rejected");
 
-  const anyApproved = actions.some((a) => a.status === "approved");
-  await ctx.db.patch(exceptionId, {
-    status: anyApproved ? "approved" : "rejected",
-  });
+  if (anyApproved) {
+    await ctx.db.patch(exceptionId, { status: "approved" });
+  } else if (allRejected) {
+    await ctx.db.patch(exceptionId, { status: "rejected" });
+  }
 }
 
 export const resolveException = mutation({
@@ -981,9 +982,6 @@ export const resolveException = mutation({
     const { actor } = await requireOpsAccess(ctx);
     const exception = await ctx.db.get(id);
     if (!exception) throw new Error("Resource not found.");
-    if (exception.status !== "approved") {
-      throw new Error("Only approved exceptions can be marked resolved.");
-    }
 
     const now = Date.now();
     const resolutionMinutes = Math.max(1, Math.round((now - exception.detectedAt) / 60_000));
