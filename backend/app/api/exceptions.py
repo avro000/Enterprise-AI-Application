@@ -305,10 +305,16 @@ async def resolve_exception(
             exception_id=exception_id,
             user_id=current_user.id,
         )
-        # Reload with actions
+        # Reload with all relationships
         stmt = (
             select(ExceptionCase)
-            .options(selectinload(ExceptionCase.actions))
+            .options(
+                selectinload(ExceptionCase.actions).selectinload(ExceptionAction.approver),
+                selectinload(ExceptionCase.resolver),
+                selectinload(ExceptionCase.assignee),
+                selectinload(ExceptionCase.customer),
+                selectinload(ExceptionCase.order),
+            )
             .where(ExceptionCase.id == case.id)
         )
         case = (await db.execute(stmt)).scalars().first()

@@ -662,5 +662,14 @@ class InvestigationService:
         )
         db.add(audit)
         await db.commit()
-        await db.refresh(case)
-        return case
+        reload_stmt = (
+            select(ExceptionCase)
+            .options(
+                selectinload(ExceptionCase.actions).selectinload(ExceptionAction.approver),
+                selectinload(ExceptionCase.assignee),
+                selectinload(ExceptionCase.customer),
+                selectinload(ExceptionCase.order),
+            )
+            .where(ExceptionCase.id == case.id)
+        )
+        return (await db.execute(reload_stmt)).scalars().first()
