@@ -1,6 +1,6 @@
-import { Toaster } from "@/components/ui/sonner";
-import { RequireAuth } from "@/components/RequireAuth";
-import { ConvexAuthProvider, ConvexReactClient } from "@/convex/react";
+import { Toaster } from "./components/ui/sonner";
+import { RequireAuth } from "./components/RequireAuth";
+import { ConvexAuthProvider, ConvexReactClient } from "./convex/react";
 import React, { StrictMode, useEffect, lazy, Suspense } from "react";
 import { createRoot } from "react-dom/client";
 import { BrowserRouter, Route, Routes, useLocation } from "react-router";
@@ -12,7 +12,7 @@ const AuthPage = lazy(() => import("./pages/Auth.tsx"));
 const NotFound = lazy(() => import("./pages/NotFound.tsx"));
 
 // OpsPilot AI application shell + pages (FRONTEND_SPEC §6)
-const AppShell = lazy(() => import("@/components/opspilot/AppShell.tsx"));
+const AppShell = lazy(() => import("./components/opspilot/AppShell.tsx"));
 const DashboardPage = lazy(() => import("./pages/opspilot/DashboardPage.tsx"));
 const ChatPage = lazy(() => import("./pages/opspilot/ChatPage.tsx"));
 const KnowledgeBasePage = lazy(() =>
