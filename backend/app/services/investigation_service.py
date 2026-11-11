@@ -366,11 +366,14 @@ class InvestigationService:
         action.executed_at = now
         action.result = f"Simulated — action logged. {f'Comment: {comment}' if comment else ''}".strip()
 
-        # Update case status based on all actions
+        # Update case status based on all actions: if any action is approved, case transitions to approved
         all_actions = case.actions or []
-        all_decided = all(a.id == action.id or a.status in ("approved", "rejected", "executed") for a in all_actions)
-        if all_decided:
+        has_approved = any(a.id == action.id or a.status in ("approved", "executed") for a in all_actions)
+        all_rejected = all((a.id == action.id and action.status == "rejected") or a.status == "rejected" for a in all_actions)
+        if has_approved:
             case.status = "approved"
+        elif all_rejected:
+            case.status = "rejected"
         else:
             case.status = "recommendation_ready"
 
@@ -432,13 +435,12 @@ class InvestigationService:
 
         # Update case status based on all actions
         all_actions = case.actions or []
-        all_decided = all(a.id == action.id or a.status in ("approved", "rejected", "executed") for a in all_actions)
-        if all_decided:
-            has_approved = any((a.id != action.id and a.status in ("approved", "executed")) for a in all_actions)
-            if has_approved:
-                case.status = "approved"
-            else:
-                case.status = "rejected"
+        has_approved = any((a.id != action.id and a.status in ("approved", "executed")) for a in all_actions)
+        all_rejected = all((a.id == action.id or a.status == "rejected") for a in all_actions)
+        if has_approved:
+            case.status = "approved"
+        elif all_rejected:
+            case.status = "rejected"
         else:
             case.status = "recommendation_ready"
 

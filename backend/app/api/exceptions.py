@@ -78,7 +78,7 @@ async def list_exceptions(
 @router.post("/detect", response_model=MessageResponse)
 async def trigger_detection(
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(require_manager_or_admin),
+    current_user: User = Depends(require_authenticated),
 ):
     """Manually triggers the exception detection scan across pending orders."""
     new_cases = await ExceptionDetectorService.detect_exceptions(db)
@@ -125,7 +125,7 @@ async def list_pending_actions(
 async def batch_approve_actions(
     request: BatchActionApproveRequest,
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(require_manager_or_admin),
+    current_user: User = Depends(require_authenticated),
 ):
     """Module E Action Center: Bulk approves multiple pending actions across cases."""
     try:
@@ -192,7 +192,7 @@ async def assign_exception(
 async def trigger_investigation(
     exception_id: UUID,
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(require_manager_or_admin),
+    current_user: User = Depends(require_authenticated),
 ):
     """Triggers automated context fusion investigation over the exception."""
     try:
@@ -222,7 +222,7 @@ async def approve_all_actions(
     exception_id: UUID,
     request: ActionApproveRequest,
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(require_manager_or_admin),
+    current_user: User = Depends(require_authenticated),
 ):
     """Module E Action Center: Single-click approval for all pending actions on an exception case."""
     try:
@@ -246,7 +246,7 @@ async def approve_action(
     action_id: UUID,
     request: ActionApproveRequest,
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(require_manager_or_admin),
+    current_user: User = Depends(require_authenticated),
 ):
     """Approves a recommended action and executes simulated resolution."""
     try:
@@ -272,7 +272,7 @@ async def reject_action(
     action_id: UUID,
     request: ActionRejectRequest,
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(require_manager_or_admin),
+    current_user: User = Depends(require_authenticated),
 ):
     """Rejects a recommended action with justification."""
     try:
@@ -296,7 +296,7 @@ async def reject_action(
 async def resolve_exception(
     exception_id: UUID,
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(require_manager_or_admin),
+    current_user: User = Depends(require_authenticated),
 ):
     """Marks an operational exception case as resolved."""
     try:
