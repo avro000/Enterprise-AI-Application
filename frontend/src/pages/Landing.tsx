@@ -18,6 +18,7 @@ import {
   History,
   Layers,
   Lock,
+  Menu,
   PlayCircle,
   Radar,
   RefreshCw,
@@ -30,6 +31,7 @@ import {
   UserPlus,
   Users,
   Workflow,
+  X,
   XCircle,
 } from "lucide-react";
 import { useState, type CSSProperties, type ReactNode } from "react";
@@ -369,6 +371,7 @@ export default function Landing() {
   const [showInvestigation, setShowInvestigation] = useState(false);
   const [caseApproved, setCaseApproved] = useState<Record<string, boolean>>({});
   const [activeRole, setActiveRole] = useState("manager");
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const currentCase = DEMO_CASES[activeCaseIndex];
   const isCurrentApproved = !!caseApproved[currentCase.id];
@@ -383,7 +386,7 @@ export default function Landing() {
   };
 
   return (
-    <div className="min-h-screen bg-background text-foreground selection:bg-primary/20 selection:text-primary">
+    <div className="min-h-screen overflow-x-hidden bg-background text-foreground selection:bg-primary/20 selection:text-primary">
       {/* ================= FIXED HEADER ================= */}
       <header className="fixed top-0 inset-x-0 z-50 px-4 pt-3 sm:pt-4 pointer-events-none">
         <nav className="clay-sm pointer-events-auto mx-auto flex max-w-6xl items-center justify-between gap-3 rounded-full border border-border/50 bg-card/95 px-4 py-2.5 shadow-md backdrop-blur-md transition-all">
@@ -416,268 +419,361 @@ export default function Landing() {
           </div>
 
           <div className="flex items-center gap-2">
-            <a href="/auth?tab=register">
+            <a href="/auth?tab=register" className="hidden sm:inline-flex">
               <Button className="clay-btn h-9 px-4 text-xs font-semibold shadow-xs">
                 <UserPlus className="size-3.5" /> Sign Up
               </Button>
             </a>
+            <button
+              type="button"
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              className="flex size-9 items-center justify-center rounded-full border border-border/60 bg-card text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground md:hidden"
+              aria-label="Toggle navigation menu"
+            >
+              {mobileMenuOpen ? <X className="size-4" /> : <Menu className="size-4" />}
+            </button>
           </div>
         </nav>
+
+        {/* Mobile menu dropdown */}
+        <AnimatePresence>
+          {mobileMenuOpen && (
+            <motion.div
+              initial={{ opacity: 0, y: -8, scale: 0.98 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: -8, scale: 0.98 }}
+              transition={{ duration: 0.18 }}
+              className="clay-md pointer-events-auto mx-auto mt-2 max-w-sm rounded-2xl border border-border/60 bg-card/98 p-4 shadow-xl backdrop-blur-lg md:hidden"
+            >
+              <div className="flex flex-col gap-1">
+                {[
+                  { label: "The Closed Loop", href: "#loop" },
+                  { label: "Interactive Demo", href: "#demo" },
+                  { label: "Architecture", href: "#architecture" },
+                  { label: "Capabilities", href: "#capabilities" },
+                  { label: "Guardrails", href: "#guardrails" },
+                  { label: "ROI Proof", href: "#roi" },
+                ].map((link) => (
+                  <a
+                    key={link.label}
+                    href={link.href}
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="flex items-center justify-between rounded-xl px-3 py-2 text-xs font-semibold text-foreground/80 hover:bg-secondary hover:text-foreground"
+                  >
+                    <span>{link.label}</span>
+                    <ChevronRight className="size-3.5 text-muted-foreground" />
+                  </a>
+                ))}
+                <div className="my-2 border-t border-border/40" />
+                <a
+                  href="/auth?tab=register"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="flex items-center justify-center gap-1.5 rounded-xl bg-primary px-3 py-2 text-xs font-semibold text-primary-foreground shadow-sm"
+                >
+                  <UserPlus className="size-3.5" /> Sign Up / Register
+                </a>
+                <a
+                  href="/dashboard"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="mt-1 flex items-center justify-center gap-1.5 rounded-xl border border-border/60 bg-card px-3 py-2 text-xs font-semibold text-foreground hover:bg-secondary"
+                >
+                  Launch Command Center
+                </a>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </header>
 
-      {/* ================= HERO SECTION ================= */}
-      <section className="relative px-4 pt-24 pb-16 sm:pt-28 sm:pb-20">
-        <div className="relative mx-auto max-w-5xl text-center">
-          {/* Status Badge */}
-          <div className="inline-flex items-center gap-2 rounded-full border border-border/80 bg-card px-4 py-1.5 shadow-xs">
-            <span className="relative flex size-2">
-              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
-              <span className="relative inline-flex size-2 rounded-full bg-emerald-500" />
-            </span>
-            <span className="text-xs font-semibold text-foreground/90">
-              Enterprise Operations Intelligence & Closed-Loop Action
-            </span>
-            <span className="hidden text-xs text-muted-foreground sm:inline">· SOC-2 Type II Ready</span>
-          </div>
+      {/* ================= HERO SECTION (FULL PAGE FILL) ================= */}
+      <section className="relative flex min-h-[100dvh] w-full flex-col justify-between px-4 pt-24 pb-8 sm:pt-28 sm:pb-12">
+        {/* Top spacer to balance vertical center with header */}
+        <div className="hidden sm:block h-2" />
 
-          <h1 className="font-display mx-auto mt-6 max-w-4xl text-4xl leading-[1.12] font-bold tracking-tight sm:text-5xl lg:text-6xl text-foreground">
+        <div className="relative mx-auto max-w-4xl text-center">
+          <h1 className="font-display mx-auto max-w-4xl text-3xl leading-[1.15] font-bold tracking-tight text-foreground sm:text-5xl lg:text-6xl">
             Close the gap between knowing something broke — and{" "}
-            <span className="text-primary underline decoration-primary/30 decoration-wavy underline-offset-6">
+            <span className="text-primary font-extrabold">
               fixing it.
             </span>
           </h1>
 
-          <p className="mx-auto mt-6 max-w-2xl text-base leading-7 text-muted-foreground sm:text-lg">
-            OpsPilot AI detects operational exceptions across your ERP, investigates root causes using
-            grounded enterprise documents, and stages verified resolutions for one-click human authorization.
-            Not a conversational gimmick — an operational execution layer.
+          <p className="mx-auto mt-5 max-w-2xl text-sm leading-relaxed text-muted-foreground sm:text-base sm:leading-7">
+            OpsPilot connects directly to ERP, CRM, and logistics streams to detect operational exceptions,
+            reconcile operating policies, and execute audited resolutions under strict human authorization.
           </p>
 
-          <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
-            <a href="/dashboard">
-              <Button size="lg" className="clay-btn h-11 px-7 text-sm font-semibold shadow-md">
+          <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3">
+            <a href="/dashboard" className="w-full sm:w-auto">
+              <Button size="lg" className="clay-btn h-11 w-full sm:w-auto px-7 text-sm font-semibold shadow-md">
                 Open Command Center <ArrowRight className="size-4" />
               </Button>
             </a>
-            <a href="#demo">
-              <Button size="lg" variant="outline" className="clay-btn h-11 bg-card px-6 text-sm font-semibold">
+            <a href="#demo" className="w-full sm:w-auto">
+              <Button size="lg" variant="outline" className="clay-btn h-11 w-full sm:w-auto bg-card px-6 text-sm font-semibold">
                 <PlayCircle className="size-4 text-primary" /> Test Interactive Case
               </Button>
             </a>
           </div>
 
-          {/* Value Props Strip */}
-          <div className="mx-auto mt-8 flex max-w-3xl flex-wrap items-center justify-center gap-3 text-xs text-muted-foreground">
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-card/60 px-3 py-1 border border-border/40">
-              <FileCheck2 className="size-3.5 text-emerald-600" /> Grounded RAG with page citations
-            </span>
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-card/60 px-3 py-1 border border-border/40">
-              <ShieldCheck className="size-3.5 text-primary" /> Human-in-the-loop governance
-            </span>
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-card/60 px-3 py-1 border border-border/40">
-              <Database className="size-3.5 text-sky-600" /> Bi-directional ERP / CRM sync
-            </span>
+          {/* Enterprise Capability Indicators */}
+          <div className="mx-auto mt-10 grid max-w-3xl grid-cols-1 gap-3 sm:grid-cols-3 text-left">
+            <div className="clay-sm rounded-2xl border border-border/40 bg-card/70 p-3.5 backdrop-blur-xs">
+              <div className="flex items-center gap-2 font-semibold text-xs text-foreground">
+                <FileCheck2 className="size-4 text-emerald-600 shrink-0" />
+                <span>Policy-Grounded Triage</span>
+              </div>
+              <p className="mt-1 text-[11px] leading-4 text-muted-foreground">
+                Resolutions directly mapped to uploaded SOPs, contracts, and SLAs.
+              </p>
+            </div>
+
+            <div className="clay-sm rounded-2xl border border-border/40 bg-card/70 p-3.5 backdrop-blur-xs">
+              <div className="flex items-center gap-2 font-semibold text-xs text-foreground">
+                <ShieldCheck className="size-4 text-primary shrink-0" />
+                <span>Human Governance</span>
+              </div>
+              <p className="mt-1 text-[11px] leading-4 text-muted-foreground">
+                Strict multi-tier approval thresholds and role-based sign-offs.
+              </p>
+            </div>
+
+            <div className="clay-sm rounded-2xl border border-border/40 bg-card/70 p-3.5 backdrop-blur-xs">
+              <div className="flex items-center gap-2 font-semibold text-xs text-foreground">
+                <Database className="size-4 text-sky-600 shrink-0" />
+                <span>ERP & CRM Write-Back</span>
+              </div>
+              <p className="mt-1 text-[11px] leading-4 text-muted-foreground">
+                Synchronous, auditable reconciliation across operational databases.
+              </p>
+            </div>
           </div>
         </div>
 
-        {/* ================= INTERACTIVE CASE SHOWCASE ================= */}
-        <motion.div
-          id="demo"
-          {...fadeUp}
-          className="mx-auto mt-12 max-w-4xl scroll-mt-24"
-        >
-          {/* Case Selector Tabs */}
-          <div className="mb-3 flex items-center justify-between px-2">
-            <span className="text-xs font-bold tracking-wider text-muted-foreground uppercase">
-              Interactive Resolution Sandbox
-            </span>
-            <div className="flex gap-1.5">
-              {DEMO_CASES.map((c, idx) => (
-                <button
-                  key={c.id}
-                  type="button"
-                  onClick={() => {
-                    setActiveCaseIndex(idx);
-                    setShowInvestigation(false);
-                  }}
-                  className={`rounded-full px-3 py-1 text-xs font-semibold transition-all ${
-                    activeCaseIndex === idx
-                      ? "bg-primary text-primary-foreground shadow-sm"
-                      : "bg-card text-muted-foreground hover:bg-secondary"
-                  }`}
-                >
-                  {c.code}
-                </button>
-              ))}
-            </div>
+        {/* Hero Bottom Cue */}
+        <div className="mx-auto pt-6 text-center">
+          <a
+            href="#demo"
+            className="inline-flex items-center gap-1.5 text-xs font-semibold text-muted-foreground/80 transition-colors hover:text-foreground"
+          >
+            <span>Explore the Interactive Resolution Sandbox</span>
+            <ChevronRight className="size-3.5 rotate-90" />
+          </a>
+        </div>
+      </section>
+
+      {/* ================= INTERACTIVE CASE SHOWCASE ================= */}
+      <section id="demo" className="relative scroll-mt-20 px-4 py-16 sm:py-24 border-t border-border/40">
+        <div className="mx-auto max-w-5xl">
+          <div className="mx-auto mb-10 max-w-2xl text-center">
+            <Pill>
+              <PlayCircle className="size-3.5 text-primary" /> Interactive Resolution Engine
+            </Pill>
+            <h2 className="font-display mt-3 text-3xl font-bold tracking-tight sm:text-4xl text-foreground">
+              Simulate exception resolution in real time
+            </h2>
+            <p className="mt-3 text-sm leading-relaxed text-muted-foreground sm:text-base">
+              Experience how OpsPilot ingests live enterprise telemetry, reconciles operating policies, and stages verified resolutions for one-click human authorization.
+            </p>
           </div>
 
-          <div className="clay-lg border border-border/40 p-6 text-left sm:p-8">
-            {/* Header info */}
-            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border/40 pb-4">
-              <div className="flex flex-wrap items-center gap-2">
-                <span
-                  className="pill"
-                  style={{
-                    "--pill-color":
-                      currentCase.severity === "critical"
-                        ? "var(--severity-critical)"
-                        : currentCase.severity === "high"
-                          ? "var(--severity-high)"
-                          : "var(--severity-medium)",
-                  } as CSSProperties}
-                >
-                  {currentCase.severity.toUpperCase()}
-                </span>
-                <span className="pill" style={{ "--pill-color": "var(--status-rejected)" } as CSSProperties}>
-                  {currentCase.riskLabel}
-                </span>
-                <span className="text-xs font-semibold text-muted-foreground">
-                  Case {currentCase.code} · Order #{currentCase.orderNumber}
-                </span>
+          <motion.div
+            {...fadeUp}
+            className="mx-auto max-w-4xl"
+          >
+            {/* Case Selector Tabs */}
+            <div className="mb-3 flex flex-wrap items-center justify-between gap-2.5 px-2">
+              <span className="text-xs font-bold tracking-wider text-muted-foreground uppercase">
+                Interactive Resolution Sandbox
+              </span>
+              <div className="flex flex-wrap gap-1.5">
+                {DEMO_CASES.map((c, idx) => (
+                  <button
+                    key={c.id}
+                    type="button"
+                    onClick={() => {
+                      setActiveCaseIndex(idx);
+                      setShowInvestigation(false);
+                    }}
+                    className={`rounded-full px-3 py-1 text-xs font-semibold transition-all ${
+                      activeCaseIndex === idx
+                        ? "bg-primary text-primary-foreground shadow-sm"
+                        : "bg-card text-muted-foreground hover:bg-secondary"
+                    }`}
+                  >
+                    {c.code}
+                  </button>
+                ))}
               </div>
+            </div>
 
-              <div className="flex items-center gap-2">
-                {isCurrentApproved ? (
-                  <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/15 px-3 py-1 text-xs font-bold text-emerald-700">
-                    <CheckCircle2 className="size-3.5" /> Approved & Executed
+            <div className="clay-lg border border-border/40 p-5 sm:p-8 text-left">
+              {/* Header info */}
+              <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border/40 pb-4">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span
+                    className="pill"
+                    style={{
+                      "--pill-color":
+                        currentCase.severity === "critical"
+                          ? "var(--severity-critical)"
+                          : currentCase.severity === "high"
+                            ? "var(--severity-high)"
+                            : "var(--severity-medium)",
+                    } as CSSProperties}
+                  >
+                    {currentCase.severity.toUpperCase()}
                   </span>
-                ) : (
-                  <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-500/15 px-3 py-1 text-xs font-bold text-amber-800">
-                    <Clock className="size-3.5" /> Awaiting Authorization
+                  <span className="pill" style={{ "--pill-color": "var(--status-rejected)" } as CSSProperties}>
+                    {currentCase.riskLabel}
                   </span>
-                )}
-              </div>
-            </div>
+                  <span className="text-xs font-semibold text-muted-foreground">
+                    Case {currentCase.code} · Order #{currentCase.orderNumber}
+                  </span>
+                </div>
 
-            {/* Case Title */}
-            <h3 className="font-display mt-4 text-xl font-bold text-foreground sm:text-2xl">
-              {currentCase.title}
-            </h3>
-
-            {/* Context Pills */}
-            <div className="mt-4 grid gap-3 sm:grid-cols-2">
-              <div className="clay-press rounded-2xl p-3 text-xs leading-5">
-                <span className="font-bold text-foreground">Governing Policy:</span>{" "}
-                <span className="text-muted-foreground">{currentCase.policy}</span>
-              </div>
-              <div className="clay-press rounded-2xl p-3 text-xs leading-5">
-                <span className="font-bold text-foreground">Synthesis Confidence:</span>{" "}
-                <span className="text-muted-foreground">
-                  {currentCase.confidence} · {currentCase.sourcesCount} Enterprise Sources Grounded
-                </span>
-              </div>
-            </div>
-
-            {/* Recommendation */}
-            <div className="mt-4 rounded-2xl border border-primary/20 bg-primary/5 p-4 text-sm leading-relaxed">
-              <div className="flex items-center gap-2 font-bold text-primary">
-                <Cpu className="size-4" /> Grounded Resolution Plan
-              </div>
-              <p className="mt-1.5 text-xs text-foreground/90 sm:text-sm">
-                {currentCase.recommendedAction}
-              </p>
-              <div className="mt-2 text-[11px] font-semibold text-muted-foreground">
-                Approval Role Required:{" "}
-                <span className="text-foreground">{currentCase.requiredRole}</span>
-              </div>
-            </div>
-
-            {/* Investigation Drawer (Collapsible) */}
-            <AnimatePresence>
-              {showInvestigation && (
-                <motion.div
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: "auto" }}
-                  exit={{ opacity: 0, height: 0 }}
-                  className="mt-4 overflow-hidden rounded-2xl border border-border bg-secondary/30 p-4"
-                >
-                  <div className="flex items-center justify-between border-b border-border/50 pb-2.5">
-                    <span className="text-xs font-bold text-foreground">
-                      Cross-System Evidence Dossier
+                <div className="flex items-center gap-2">
+                  {isCurrentApproved ? (
+                    <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/15 px-3 py-1 text-xs font-bold text-emerald-700">
+                      <CheckCircle2 className="size-3.5" /> Approved & Executed
                     </span>
-                    <span className="text-[11px] text-muted-foreground">Live Telemetry Synchronized</span>
-                  </div>
+                  ) : (
+                    <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-500/15 px-3 py-1 text-xs font-bold text-amber-800">
+                      <Clock className="size-3.5" /> Awaiting Authorization
+                    </span>
+                  )}
+                </div>
+              </div>
 
-                  <div className="mt-3 grid gap-3 sm:grid-cols-2 text-xs">
-                    <div className="space-y-1.5">
-                      <p className="font-semibold text-foreground">ERP Live State:</p>
-                      <p className="text-muted-foreground">Client: {currentCase.erpDetails.customer}</p>
-                      <p className="text-muted-foreground">Inventory: {currentCase.erpDetails.sku}</p>
-                      <p className="text-muted-foreground">{currentCase.erpDetails.stockout}</p>
-                      <p className="font-medium text-destructive">{currentCase.erpDetails.deadline}</p>
+              {/* Case Title */}
+              <h3 className="font-display mt-4 text-lg font-bold text-foreground sm:text-2xl">
+                {currentCase.title}
+              </h3>
+
+              {/* Context Pills */}
+              <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                <div className="clay-press rounded-2xl p-3 text-xs leading-5">
+                  <span className="font-bold text-foreground">Governing Policy:</span>{" "}
+                  <span className="text-muted-foreground">{currentCase.policy}</span>
+                </div>
+                <div className="clay-press rounded-2xl p-3 text-xs leading-5">
+                  <span className="font-bold text-foreground">Synthesis Confidence:</span>{" "}
+                  <span className="text-muted-foreground">
+                    {currentCase.confidence} · {currentCase.sourcesCount} Enterprise Sources Grounded
+                  </span>
+                </div>
+              </div>
+
+              {/* Recommendation */}
+              <div className="mt-4 rounded-2xl border border-primary/20 bg-primary/5 p-4 text-sm leading-relaxed">
+                <div className="flex items-center gap-2 font-bold text-primary">
+                  <Cpu className="size-4" /> Grounded Resolution Plan
+                </div>
+                <p className="mt-1.5 text-xs text-foreground/90 sm:text-sm">
+                  {currentCase.recommendedAction}
+                </p>
+                <div className="mt-2 text-[11px] font-semibold text-muted-foreground">
+                  Approval Role Required:{" "}
+                  <span className="text-foreground">{currentCase.requiredRole}</span>
+                </div>
+              </div>
+
+              {/* Investigation Drawer (Collapsible) */}
+              <AnimatePresence>
+                {showInvestigation && (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: "auto" }}
+                    exit={{ opacity: 0, height: 0 }}
+                    className="mt-4 overflow-hidden rounded-2xl border border-border bg-secondary/30 p-4"
+                  >
+                    <div className="flex items-center justify-between border-b border-border/50 pb-2.5">
+                      <span className="text-xs font-bold text-foreground">
+                        Cross-System Evidence Dossier
+                      </span>
+                      <span className="text-[11px] text-muted-foreground">Live Telemetry Synchronized</span>
                     </div>
 
-                    <div className="space-y-1.5">
-                      <p className="font-semibold text-foreground">Grounded Knowledge Citations:</p>
-                      <ul className="space-y-1 text-muted-foreground">
-                        {currentCase.citations.map((cite) => (
-                          <li key={cite} className="flex items-start gap-1.5">
-                            <FileText className="size-3.5 mt-0.5 shrink-0 text-primary" />
-                            <span>{cite}</span>
-                          </li>
-                        ))}
-                      </ul>
+                    <div className="mt-3 grid gap-3 sm:grid-cols-2 text-xs">
+                      <div className="space-y-1.5">
+                        <p className="font-semibold text-foreground">ERP Live State:</p>
+                        <p className="text-muted-foreground">Client: {currentCase.erpDetails.customer}</p>
+                        <p className="text-muted-foreground">Inventory: {currentCase.erpDetails.sku}</p>
+                        <p className="text-muted-foreground">{currentCase.erpDetails.stockout}</p>
+                        <p className="font-medium text-destructive">{currentCase.erpDetails.deadline}</p>
+                      </div>
+
+                      <div className="space-y-1.5">
+                        <p className="font-semibold text-foreground">Grounded Knowledge Citations:</p>
+                        <ul className="space-y-1 text-muted-foreground">
+                          {currentCase.citations.map((cite) => (
+                            <li key={cite} className="flex items-start gap-1.5">
+                              <FileText className="size-3.5 mt-0.5 shrink-0 text-primary" />
+                              <span>{cite}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
                     </div>
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
-
-            {/* Actions Bar */}
-            <div className="mt-6 flex flex-wrap items-center justify-between gap-3 border-t border-border/40 pt-4">
-              <div className="flex flex-wrap items-center gap-2">
-                {!isCurrentApproved ? (
-                  <>
-                    <Button
-                      type="button"
-                      onClick={handleApprove}
-                      className="clay-btn bg-[#4e9a6b] hover:bg-[#43875d] text-white font-semibold px-5 text-xs h-9"
-                    >
-                      <CheckCircle2 className="size-3.5" /> Approve & Dispatch
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={() => setShowInvestigation(!showInvestigation)}
-                      className="clay-btn bg-card font-semibold px-4 text-xs h-9"
-                    >
-                      <SearchCheck className="size-3.5 text-primary" />
-                      {showInvestigation ? "Hide Evidence" : "Inspect Evidence"}
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      onClick={() => alert("Simulation: Flagged for compliance review.")}
-                      className="text-xs text-muted-foreground hover:text-foreground h-9"
-                    >
-                      Escalate to Legal
-                    </Button>
-                  </>
-                ) : (
-                  <div className="flex items-center gap-3">
-                    <span className="text-xs font-semibold text-emerald-700">
-                      ✓ Action successfully dispatched to SAP & Salesforce API · Case marked resolved
-                    </span>
-                    <Button
-                      type="button"
-                      size="sm"
-                      variant="outline"
-                      onClick={handleReset}
-                      className="clay-btn text-xs h-8"
-                    >
-                      <RefreshCw className="size-3" /> Reset Demo
-                    </Button>
-                  </div>
+                  </motion.div>
                 )}
-              </div>
+              </AnimatePresence>
 
-              <div className="text-[11px] text-muted-foreground">
-                Audit Trail ID: <code className="rounded bg-muted px-1.5 py-0.5 font-mono">AUD-8921-OK</code>
+              {/* Actions Bar */}
+              <div className="mt-6 flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-t border-border/40 pt-4">
+                <div className="flex flex-wrap items-center gap-2">
+                  {!isCurrentApproved ? (
+                    <>
+                      <Button
+                        type="button"
+                        onClick={handleApprove}
+                        className="clay-btn bg-[#4e9a6b] hover:bg-[#43875d] text-white font-semibold px-5 text-xs h-9 w-full sm:w-auto"
+                      >
+                        <CheckCircle2 className="size-3.5" /> Approve & Dispatch
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => setShowInvestigation(!showInvestigation)}
+                        className="clay-btn bg-card font-semibold px-4 text-xs h-9 w-full sm:w-auto"
+                      >
+                        <SearchCheck className="size-3.5 text-primary" />
+                        {showInvestigation ? "Hide Evidence" : "Inspect Evidence"}
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        onClick={() => alert("Simulation: Flagged for compliance review.")}
+                        className="text-xs text-muted-foreground hover:text-foreground h-9 w-full sm:w-auto"
+                      >
+                        Escalate to Legal
+                      </Button>
+                    </>
+                  ) : (
+                    <div className="flex flex-wrap items-center gap-3">
+                      <span className="text-xs font-semibold text-emerald-700">
+                        ✓ Action successfully dispatched to SAP & Salesforce API · Case marked resolved
+                      </span>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        onClick={handleReset}
+                        className="clay-btn text-xs h-8"
+                      >
+                        <RefreshCw className="size-3" /> Reset Demo
+                      </Button>
+                    </div>
+                  )}
+                </div>
+
+                <div className="text-[11px] text-muted-foreground">
+                  Audit Trail ID: <code className="rounded bg-muted px-1.5 py-0.5 font-mono">AUD-8921-OK</code>
+                </div>
               </div>
             </div>
-          </div>
-        </motion.div>
+          </motion.div>
+        </div>
       </section>
 
       {/* ================= ROLE PERSPECTIVES ================= */}
@@ -765,7 +861,7 @@ export default function Landing() {
           </motion.div>
 
           {/* Stepper Pipeline */}
-          <div className="mt-12 grid gap-3 sm:grid-cols-2 lg:grid-cols-7">
+          <div className="mt-12 grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-7">
             {LOOP_STEPS.map((s, idx) => (
               <div
                 key={s.step}
@@ -1118,14 +1214,14 @@ export default function Landing() {
               regulatory documents, and the complete closed-loop authorization workflow.
             </p>
 
-            <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
-              <a href="/dashboard">
-                <Button size="lg" className="clay-btn h-11 px-8 text-sm font-semibold shadow-md">
+            <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3">
+              <a href="/dashboard" className="w-full sm:w-auto">
+                <Button size="lg" className="clay-btn h-11 w-full sm:w-auto px-8 text-sm font-semibold shadow-md">
                   Launch Command Center <ArrowRight className="size-4" />
                 </Button>
               </a>
-              <a href={AUTH_HREF}>
-                <Button size="lg" variant="outline" className="clay-btn h-11 bg-card px-6 text-sm font-semibold">
+              <a href={AUTH_HREF} className="w-full sm:w-auto">
+                <Button size="lg" variant="outline" className="clay-btn h-11 w-full sm:w-auto bg-card px-6 text-sm font-semibold">
                   <Lock className="size-4" /> Enterprise Sign In
                 </Button>
               </a>
