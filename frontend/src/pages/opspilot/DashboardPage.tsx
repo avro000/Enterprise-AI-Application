@@ -191,30 +191,27 @@ export default function DashboardPage() {
 
       {/* Section 4 — recent exceptions */}
       <section className="clay overflow-hidden p-2">
-        <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between sm:gap-4 px-4 pt-3 pb-1">
-          <div className="flex items-center justify-between gap-3 sm:block">
-            <div>
+        <div className="flex items-center justify-between px-4 pt-3 pb-1">
+          <div className="w-full sm:w-auto">
+            <div className="flex items-center justify-between sm:block">
               <h2 className="font-display text-lg font-semibold">Recent exceptions</h2>
-              <p className="text-xs text-muted-foreground hidden sm:block">
-                Newest detections first — click a row to investigate
-              </p>
+              <Button
+                size="sm"
+                variant="outline"
+                className="clay-btn h-7 bg-card px-2.5 text-xs sm:hidden shrink-0"
+                onClick={() => navigate("/exceptions")}
+              >
+                View all <ArrowRight className="size-3" />
+              </Button>
             </div>
-            <Button
-              size="sm"
-              variant="outline"
-              className="clay-btn h-8 bg-card px-3 text-xs shrink-0 sm:hidden"
-              onClick={() => navigate("/exceptions")}
-            >
-              View all <ArrowRight className="size-3" />
-            </Button>
+            <p className="text-xs text-muted-foreground mt-0.5 sm:mt-0">
+              Newest detections first — click a row to investigate
+            </p>
           </div>
-          <p className="text-xs text-muted-foreground sm:hidden">
-            Newest detections first — click a row to investigate
-          </p>
           <Button
             size="sm"
             variant="outline"
-            className="clay-btn hidden sm:inline-flex h-8 bg-card px-3 text-xs shrink-0"
+            className="clay-btn hidden h-8 bg-card px-3 text-xs sm:inline-flex shrink-0"
             onClick={() => navigate("/exceptions")}
           >
             View all <ArrowRight className="size-3" />
