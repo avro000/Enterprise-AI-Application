@@ -191,17 +191,28 @@ export default function DashboardPage() {
 
       {/* Section 4 — recent exceptions */}
       <section className="clay overflow-hidden p-2">
-        <div className="flex items-center justify-between px-4 pt-3 pb-1">
-          <div>
-            <h2 className="font-display text-lg font-semibold">Recent exceptions</h2>
-            <p className="text-xs text-muted-foreground">
+        <div className="flex flex-col gap-1 px-3 sm:px-4 pt-3 pb-2 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
+          <div className="flex items-center justify-between gap-2 sm:block sm:min-w-0 sm:flex-1">
+            <h2 className="font-display text-base sm:text-lg font-semibold">Recent exceptions</h2>
+            <Button
+              size="sm"
+              variant="outline"
+              className="clay-btn h-7 bg-card px-2.5 text-xs sm:hidden shrink-0"
+              onClick={() => navigate("/exceptions")}
+            >
+              View all <ArrowRight className="size-3" />
+            </Button>
+            <p className="hidden text-xs text-muted-foreground sm:block">
               Newest detections first — click a row to investigate
             </p>
           </div>
+          <p className="text-xs text-muted-foreground sm:hidden">
+            Newest detections first — click a row to investigate
+          </p>
           <Button
             size="sm"
             variant="outline"
-            className="clay-btn h-8 bg-card px-3 text-xs"
+            className="clay-btn hidden h-8 bg-card px-3 text-xs sm:inline-flex shrink-0"
             onClick={() => navigate("/exceptions")}
           >
             View all <ArrowRight className="size-3" />
@@ -215,56 +226,104 @@ export default function DashboardPage() {
             message="All systems operational. OpsPilot continuously scans orders, tickets, invoices and inventory for anomalies."
           />
         ) : (
-          <div className="overflow-x-auto">
-            <table className="clay-table w-full text-sm">
-              <thead>
-                <tr className="border-b text-left text-[11px] tracking-wide text-muted-foreground uppercase">
-                  <th className="px-4 py-3 font-semibold">Case #</th>
-                  <th className="px-4 py-3 font-semibold">Type</th>
-                  <th className="px-4 py-3 font-semibold">Severity</th>
-                  <th className="px-4 py-3 font-semibold">Status</th>
-                  <th className="hidden px-4 py-3 font-semibold sm:table-cell">Customer</th>
-                  <th className="px-4 py-3 font-semibold">Detected</th>
-                  <th className="px-2 py-3" />
-                </tr>
-              </thead>
-              <tbody>
-                {recent.map((e) => (
-                  <tr
-                    key={e.id}
-                    onClick={() => navigate(`/exceptions/${e.id}`)}
-                    className="cursor-pointer border-b border-border/50 transition-colors last:border-0"
-                    style={
-                      e.severity === "critical"
-                        ? { borderLeft: "3px solid var(--severity-critical)" }
-                        : undefined
-                    }
-                  >
-                    <td className="px-4 py-3 font-semibold text-primary">{e.caseNumber}</td>
-                    <td className="px-4 py-3">{humanizeType(e.exceptionType)}</td>
-                    <td className="px-4 py-3">
+          <>
+            {/* Mobile List View (< sm) */}
+            <div className="flex flex-col divide-y divide-border/40 sm:hidden">
+              {recent.map((e) => (
+                <div
+                  key={e.id}
+                  onClick={() => navigate(`/exceptions/${e.id}`)}
+                  className="flex items-center justify-between gap-3 px-3 py-3 transition-colors active:bg-secondary/50 cursor-pointer"
+                  style={
+                    e.severity === "critical"
+                      ? { borderLeft: "3px solid var(--severity-critical)" }
+                      : undefined
+                  }
+                >
+                  <div className="flex flex-col gap-1.5 min-w-0 flex-1">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="font-semibold text-xs text-primary whitespace-nowrap">
+                        {e.caseNumber}
+                      </span>
+                      <span className="text-[11px] text-muted-foreground shrink-0">
+                        {relativeTime(e.detectedAt)}
+                      </span>
+                    </div>
+
+                    <p className="text-xs font-medium text-foreground truncate">
+                      {humanizeType(e.exceptionType)}
+                    </p>
+
+                    <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
                       <SeverityBadge severity={e.severity} />
-                    </td>
-                    <td className="px-4 py-3">
                       <StatusBadge status={e.status as ExceptionStatus} />
-                    </td>
-                    <td className="hidden px-4 py-3 sm:table-cell">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <span className="font-medium text-foreground">{e.customer}</span>
-                        {e.customerTier && <TierBadge tier={e.customerTier} />}
-                      </div>
-                    </td>
-                    <td className="px-4 py-3 text-xs text-muted-foreground">
-                      {relativeTime(e.detectedAt)}
-                    </td>
-                    <td className="px-2 py-3 text-muted-foreground">
-                      <ChevronRight className="size-4" />
-                    </td>
+                      {e.customer && (
+                        <div className="flex items-center gap-1 text-[11px] text-muted-foreground truncate max-w-[170px]">
+                          <span>·</span>
+                          <span className="truncate">{e.customer}</span>
+                          {e.customerTier && <TierBadge tier={e.customerTier} />}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  <ChevronRight className="size-4 shrink-0 text-muted-foreground/60" />
+                </div>
+              ))}
+            </div>
+
+            {/* Desktop Table View (>= sm) - 100% untouched */}
+            <div className="hidden sm:block overflow-x-auto">
+              <table className="clay-table w-full text-sm">
+                <thead>
+                  <tr className="border-b text-left text-[11px] tracking-wide text-muted-foreground uppercase">
+                    <th className="px-4 py-3 font-semibold">Case #</th>
+                    <th className="px-4 py-3 font-semibold">Type</th>
+                    <th className="px-4 py-3 font-semibold">Severity</th>
+                    <th className="px-4 py-3 font-semibold">Status</th>
+                    <th className="hidden px-4 py-3 font-semibold sm:table-cell">Customer</th>
+                    <th className="px-4 py-3 font-semibold">Detected</th>
+                    <th className="px-2 py-3" />
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody>
+                  {recent.map((e) => (
+                    <tr
+                      key={e.id}
+                      onClick={() => navigate(`/exceptions/${e.id}`)}
+                      className="cursor-pointer border-b border-border/50 transition-colors last:border-0"
+                      style={
+                        e.severity === "critical"
+                          ? { borderLeft: "3px solid var(--severity-critical)" }
+                          : undefined
+                      }
+                    >
+                      <td className="px-4 py-3 font-semibold text-primary">{e.caseNumber}</td>
+                      <td className="px-4 py-3">{humanizeType(e.exceptionType)}</td>
+                      <td className="px-4 py-3">
+                        <SeverityBadge severity={e.severity} />
+                      </td>
+                      <td className="px-4 py-3">
+                        <StatusBadge status={e.status as ExceptionStatus} />
+                      </td>
+                      <td className="hidden px-4 py-3 sm:table-cell">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className="font-medium text-foreground">{e.customer}</span>
+                          {e.customerTier && <TierBadge tier={e.customerTier} />}
+                        </div>
+                      </td>
+                      <td className="px-4 py-3 text-xs text-muted-foreground">
+                        {relativeTime(e.detectedAt)}
+                      </td>
+                      <td className="px-2 py-3 text-muted-foreground">
+                        <ChevronRight className="size-4" />
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </>
         )}
       </section>
     </div>
